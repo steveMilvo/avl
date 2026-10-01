@@ -1,8 +1,9 @@
-import { type Vec3, v, frame, compose, rotY, identity, transformPoint, type Frame } from "./math.js";
+import { type Vec3, v, frame, compose, rotY, identity, transformPoint, transformDir, type Frame } from "./math.js";
 import { type MassComponent } from "./mass.js";
 import { type OscillatingAxleSupport, evaluateStability, type StabilityResult } from "./stability.js";
 import { type Terrain } from "./terrain.js";
-import { type ProfileMeta, type CapacityEntry } from "./profile.js";
+import { type ProfileMeta, type CapacityEntry, type OperatorSeatSpec } from "./profile.js";
+import { type HullPoint, type DynamicsSetup, type OperatorBehaviour, simulateTipOver, type DynamicsResult } from "./dynamics.js";
 
 /**
  * Counterbalanced forklift model.
@@ -32,7 +33,17 @@ export interface ForkliftProfile {
     tiltBackMax: number;               // rad
     tiltForwardMax: number;            // rad
     sideShiftMax: number;              // m, ± (0 if not fitted)
+    tyreFront: { radius: number; width: number };
+    tyreRear: { radius: number; width: number };
+    body: { rearX: number; width: number; counterweightTop: number; hoodHeight: number };
+    overheadGuard: { frontX: number; rearX: number; width: number; height: number };
+    mastCollapsedHeight: number;       // m, top of outer mast above ground
+    freeLift: number;                  // m
+    mastWidth: number;                 // m
+    forkSpacing: number;               // m centre to centre
   };
+  operatorSeat: OperatorSeatSpec;
+  gyration: Record<string, number>;
   masses: {
     chassis: { mass: number; cg: Vec3 };        // chassis incl. engine, drive, operator compartment; EXCLUDING counterweight and mast
     counterweight: { mass: number; cg: Vec3 };  // ground frame
@@ -166,4 +177,69 @@ export const evaluateForklift = (profile: ForkliftProfile, inputs: ForkliftInput
     ...(inputs.acceleration ? { acceleration: inputs.acceleration } : {}),
   });
   return { profile, inputs, geometry, components, support, stability };
+};
+
+/** Inner-mast rise for a three-stage mast: the carriage rises within the free lift, then the inner stage carries it. */
+export const innerMastRise = (p: ForkliftProfile, lift: number): number => Math.max(0, lift - p.geometry.freeLift);
+
+/** Structural hull points (ground frame, unrolled) used for ground-strike detection. */
+export const forkliftHull = (p: ForkliftProfile, inp: ForkliftInputs, geo: ForkliftGeometryState): HullPoint[] => {
+  const g = p.geometry, pts: HullPoint[] = [];
+  const og = g.overheadGuard;
+  for (const x of [og.frontX, og.rearX]) for (const y of [og.width / 2, -og.width / 2])
+    pts.push({ id: `guard${x === og.frontX ? "F" : "R"}${y > 0 ? "L" : "R"}`, tag: "overhead-guard", label: "Overhead guard", p: v(x, y, og.height) });
+  for (const y of [g.body.width / 2, -g.body.width / 2]) {
+    pts.push({ id: `cwTop${y > 0 ? "L" : "R"}`, tag: "counterweight", label: "Counterweight", p: v(g.body.rearX, y, g.body.counterweightTop) });
+    pts.push({ id: `cwLow${y > 0 ? "L" : "R"}`, tag: "counterweight", label: "Counterweight", p: v(g.body.rearX, y, 0.3) });
+    pts.push({ id: `hood${y > 0 ? "L" : "R"}`, tag: "body", label: "Body side", p: v(-0.6, y, g.body.hoodHeight) });
+  }
+  for (const [x, t, side] of [[0, g.tyreFront, g.trackFront], [-g.wheelbase, g.tyreRear, g.trackRear]] as const)
+    for (const y of [side / 2 + t.width / 2, -side / 2 - t.width / 2])
+      pts.push({ id: `tyre${x === 0 ? "F" : "R"}${y > 0 ? "L" : "R"}`, tag: "tyre", label: "Tyre", p: v(x, y, 2 * t.radius) });
+  const mastTopRel = g.mastCollapsedHeight + innerMastRise(p, inp.liftHeight) - g.mastPivot.z;
+  for (const y of [g.mastWidth / 2, -g.mastWidth / 2])
+    pts.push({ id: `mastTop${y > 0 ? "L" : "R"}`, tag: "mast", label: "Mast head", p: transformPoint(geo.mastFrame, v(0.15, y, mastTopRel)) });
+  for (const y of [g.forkSpacing / 2, -g.forkSpacing / 2])
+    pts.push({ id: `fork${y > 0 ? "L" : "R"}`, tag: "forks", label: "Fork tips", p: transformPoint(geo.carriageFrame, v(g.forkLength, y, -0.04)) });
+  return pts;
+};
+
+export const forkliftPayloadHull = (inp: ForkliftInputs, geo: ForkliftGeometryState): HullPoint[] => {
+  const L = inp.payload; if (!L) return [];
+  const pts: HullPoint[] = [];
+  for (const x of [L.gapFromForkFace, L.gapFromForkFace + L.length]) for (const y of [L.width / 2, -L.width / 2]) for (const z of [0, L.height])
+    pts.push({ id: `load${x}${y}${z}`, tag: "payload", label: "Load", p: transformPoint(geo.carriageFrame, v(x, y, z)) });
+  return pts;
+};
+
+export interface ManoeuvreSpec {
+  /** Constant machine acceleration during the event (ground frame, m/s²), e.g. braking = (−a, 0, 0). */
+  acceleration: Vec3;
+  /** Duration of the acceleration (s). After this the machine is at rest. */
+  duration: number;
+}
+
+export const forkliftDynamics = (s: ForkliftState, opts: { behaviour: OperatorBehaviour; jumpSide?: "fall" | "high"; manoeuvre?: ManoeuvreSpec; dt?: number; tEnd?: number }): DynamicsResult => {
+  const p = s.profile, L = s.inputs.payload;
+  const m = opts.manoeuvre;
+  const setup: DynamicsSetup = {
+    stability: s.stability,
+    terrain: s.inputs.terrain,
+    hull: forkliftHull(p, s.inputs, s.geometry),
+    gyration: p.gyration,
+    ...(m ? { accel: (t: number) => (t < m.duration ? m.acceleration : v(0, 0, 0)) } : {}),
+    operator: {
+      seat: v(p.operatorSeat.hip.x, p.operatorSeat.hip.y, p.operatorSeat.hip.z), mass: p.masses.operator.mass,
+      behaviour: opts.behaviour, enclosedCab: p.operatorSeat.enclosedCab, seatFriction: p.operatorSeat.seatFriction,
+      reactionTime: 0.4, jumpSpeed: 2.5, jumpSide: opts.jumpSide ?? "fall",
+    },
+    ...(opts.dt ? { dt: opts.dt } : {}),
+    ...(opts.tEnd ? { tEnd: opts.tEnd } : {}),
+  };
+  if (L) setup.payload = {
+    mode: "rigid", secured: L.secured, friction: L.loadFriction, angleOfRepose: 0,
+    normal: s.geometry.forkPlaneNormal, outward: transformDir(s.geometry.carriageFrame, v(1, 0, 0)),
+    hull: forkliftPayloadHull(s.inputs, s.geometry), halfHeight: L.height / 2,
+  };
+  return simulateTipOver(setup);
 };

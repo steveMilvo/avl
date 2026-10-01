@@ -1,0 +1,436 @@
+{
+  "meta": {
+    "id": "caterpillar.loader.950f.draft-v0",
+    "schemaVersion": 1,
+    "version": "0.0.1",
+    "machineType": "articulated-loader",
+    "manufacturer": "Caterpillar",
+    "model": "950F",
+    "configuration": "Unconfirmed: 23.5-25 tyres, ~2.9 m³ general-purpose bucket, standard counterweight",
+    "releaseStatus": "draft-unverified",
+    "notes": "DRAFT. Overall dimensions come from unverified third-party listings. Component masses and centres of gravity are NOT published and are assumed, distributed only to sum to the listed operating weight. They were not tuned to match the listed tipping load. Results are illustrative only. Needed: Caterpillar 950F specalog for the site machine's serial range, bucket and tyre fitted, and measured axle loads.",
+    "references": [
+      "https://www.ritchiespecs.com/model/caterpillar-950f-wheel-loader (unverified)",
+      "https://www.lectura-specs.com/en/model/construction-machinery/wheel-loaders-caterpillar/950f-11743124 (unverified)"
+    ]
+  },
+  "geometry": {
+    "rearAxleX": {
+      "value": -1590,
+      "unit": "mm",
+      "status": "estimated",
+      "source": "Third-party listing found by web search summary (ritchiespecs.com, caterpillar-950f-wheel-loader); page not opened directly; UNVERIFIED",
+      "note": "half of 3180 mm wheelbase; joint assumed mid-wheelbase"
+    },
+    "frontAxleX": {
+      "value": 1590,
+      "unit": "mm",
+      "status": "estimated",
+      "source": "Third-party listing found by web search summary (ritchiespecs.com, caterpillar-950f-wheel-loader); page not opened directly; UNVERIFIED",
+      "note": "half of 3180 mm wheelbase"
+    },
+    "trackFront": {
+      "value": 2140,
+      "unit": "mm",
+      "status": "estimated",
+      "source": "Third-party listing found by web search summary (ritchiespecs.com, caterpillar-950f-wheel-loader); page not opened directly; UNVERIFIED",
+      "note": "tread; may belong to current Cat 950, unverified"
+    },
+    "trackRear": {
+      "value": 2140,
+      "unit": "mm",
+      "status": "estimated",
+      "source": "Third-party listing found by web search summary (ritchiespecs.com, caterpillar-950f-wheel-loader); page not opened directly; UNVERIFIED",
+      "note": "as front"
+    },
+    "rearAxlePivotHeight": {
+      "value": 800,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "rearAxleOscillationLimit": {
+      "value": 13,
+      "unit": "deg",
+      "status": "estimated",
+      "source": "Third-party listing found by web search summary (ritchiespecs.com, caterpillar-950f-wheel-loader); page not opened directly; UNVERIFIED",
+      "note": "26° total listed; ±13° implied"
+    },
+    "articulationLimit": {
+      "value": 40,
+      "unit": "deg",
+      "status": "assumed",
+      "note": "not found; typical value assumed"
+    },
+    "armPivot": {
+      "x": {
+        "value": 1150,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "z": {
+        "value": 2000,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "armLength": {
+      "value": 2750,
+      "unit": "mm",
+      "status": "assumed",
+      "note": "chosen so the hinge pin reaches the listed 3953 mm at max lift"
+    },
+    "armAngleMin": {
+      "value": -33,
+      "unit": "deg",
+      "status": "assumed"
+    },
+    "armAngleMax": {
+      "value": 45.25,
+      "unit": "deg",
+      "status": "assumed",
+      "note": "gives 3953 mm hinge pin height (listed, unverified)"
+    },
+    "bucketAngleMin": {
+      "value": -45,
+      "unit": "deg",
+      "status": "assumed"
+    },
+    "bucketAngleMax": {
+      "value": 45,
+      "unit": "deg",
+      "status": "assumed"
+    },
+    "bucketStruckVolume": {
+      "value": 2.5,
+      "unit": "m3",
+      "status": "assumed"
+    },
+    "bucketHeapedVolume": {
+      "value": 2.9,
+      "unit": "m3",
+      "status": "estimated",
+      "source": "Third-party listing found by web search summary (ritchiespecs.com, caterpillar-950f-wheel-loader); page not opened directly; UNVERIFIED",
+      "note": "listed range 2.6–2.9 m³"
+    },
+    "bucketWidth": {
+      "value": 2900,
+      "unit": "mm",
+      "status": "estimated",
+      "source": "Third-party listing found by web search summary (ritchiespecs.com, caterpillar-950f-wheel-loader); page not opened directly; UNVERIFIED",
+      "note": "~9 ft, rounded"
+    },
+    "bucketFillCentroid": {
+      "x": {
+        "value": 600,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "z": {
+        "value": 420,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "bucketFloorAngle": {
+      "value": 0,
+      "unit": "deg",
+      "status": "assumed"
+    },
+    "bucketFloorLength": {
+      "value": 1250,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "bucketBackHeight": {
+      "value": 1150,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "tyre": {
+      "radius": {
+        "value": 800,
+        "unit": "mm",
+        "status": "assumed",
+        "note": "23.5-25 listed; radius approximate"
+      },
+      "width": {
+        "value": 600,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "cab": {
+      "frontX": {
+        "value": 200,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "rearX": {
+        "value": -1400,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "width": {
+        "value": 1500,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "ropsHeight": {
+        "value": 3400,
+        "unit": "mm",
+        "status": "estimated",
+        "source": "Third-party listing found by web search summary (ritchiespecs.com, caterpillar-950f-wheel-loader); page not opened directly; UNVERIFIED",
+        "note": "transport height 3.4 m listed"
+      }
+    },
+    "rearBody": {
+      "rearX": {
+        "value": -3000,
+        "unit": "mm",
+        "status": "assumed",
+        "note": "from listed 7689 mm overall length"
+      },
+      "width": {
+        "value": 2400,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "height": {
+        "value": 2350,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    }
+  },
+  "masses": {
+    "rearFrame": {
+      "mass": {
+        "value": 7345,
+        "unit": "kg",
+        "status": "assumed",
+        "note": "assumed split of listed 15,730 kg operating weight"
+      },
+      "cg": {
+        "x": {
+          "value": -1550,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 1150,
+          "unit": "mm",
+          "status": "assumed"
+        }
+      }
+    },
+    "counterweight": {
+      "mass": {
+        "value": 1800,
+        "unit": "kg",
+        "status": "assumed"
+      },
+      "cg": {
+        "x": {
+          "value": -2750,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 900,
+          "unit": "mm",
+          "status": "assumed"
+        }
+      }
+    },
+    "frontFrame": {
+      "mass": {
+        "value": 3200,
+        "unit": "kg",
+        "status": "assumed"
+      },
+      "cg": {
+        "x": {
+          "value": 1350,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 850,
+          "unit": "mm",
+          "status": "assumed"
+        }
+      }
+    },
+    "operator": {
+      "mass": {
+        "value": 85,
+        "unit": "kg",
+        "status": "assumed"
+      },
+      "cg": {
+        "x": {
+          "value": -550,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 1900,
+          "unit": "mm",
+          "status": "assumed"
+        }
+      }
+    },
+    "arms": {
+      "mass": {
+        "value": 1900,
+        "unit": "kg",
+        "status": "assumed"
+      },
+      "cg": {
+        "x": {
+          "value": 1300,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 150,
+          "unit": "mm",
+          "status": "assumed"
+        }
+      }
+    },
+    "bucket": {
+      "mass": {
+        "value": 1400,
+        "unit": "kg",
+        "status": "assumed"
+      },
+      "cg": {
+        "x": {
+          "value": 500,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 350,
+          "unit": "mm",
+          "status": "assumed"
+        }
+      }
+    }
+  },
+  "capacity": {
+    "staticTippingLoadStraight_kg": 10543,
+    "status": "estimated",
+    "basis": "Listed static tipping load 10,543 kg from an unverified third-party listing. Straight or full turn not stated. A tipping load is NOT a permitted payload.",
+    "testConfiguration": "Not stated (bucket, tyres, standard unknown)"
+  },
+  "restrictions": {
+    "note": "No manufacturer operating restrictions entered."
+  },
+  "operatorSeat": {
+    "hip": {
+      "x": {
+        "value": -550,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "y": {
+        "value": 0,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "z": {
+        "value": 1900,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "enclosedCab": true,
+    "seatFriction": {
+      "value": 0.5,
+      "unit": "1",
+      "status": "assumed"
+    },
+    "seatbeltFitted": true
+  },
+  "gyration": {
+    "rearFrame": {
+      "value": 0.9,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "counterweight": {
+      "value": 0.5,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "frontFrame": {
+      "value": 0.8,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "arms": {
+      "value": 0.9,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "bucket": {
+      "value": 0.7,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "operator": {
+      "value": 0.3,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "payload": {
+      "value": 0.6,
+      "unit": "m",
+      "status": "assumed"
+    }
+  },
+  "dataGaps": [
+    "Operating weight configuration",
+    "Component masses and CGs (assumed)",
+    "Axle loads",
+    "Articulation angle",
+    "Rear axle pivot height",
+    "Linkage geometry",
+    "Bucket mass and shape",
+    "Full-turn tipping load and test configuration",
+    "Rated operating load",
+    "Operating restrictions"
+  ]
+}

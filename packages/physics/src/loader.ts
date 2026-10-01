@@ -1,8 +1,10 @@
-import { type Vec3, v, frame, compose, rotY, rotZ, identity, transformPoint, type Frame } from "./math.js";
+import { type Vec3, v, frame, compose, rotY, rotZ, identity, transformPoint, transformDir, type Frame } from "./math.js";
 import { type MassComponent } from "./mass.js";
 import { type OscillatingAxleSupport, evaluateStability, type StabilityResult } from "./stability.js";
 import { type Terrain } from "./terrain.js";
-import { type ProfileMeta } from "./profile.js";
+import { type ProfileMeta, type OperatorSeatSpec } from "./profile.js";
+import { type HullPoint, type DynamicsSetup, type OperatorBehaviour, simulateTipOver, type DynamicsResult } from "./dynamics.js";
+import { type ManoeuvreSpec } from "./forklift.js";
 
 /**
  * Articulated front-end loader model.
@@ -43,7 +45,15 @@ export interface LoaderProfile {
     bucketFillCentroid: { x: number; z: number };
     /** Angle of the bucket floor relative to the bucket frame x axis (rad). 0 = floor along +x. */
     bucketFloorAngle: number;
+    bucketFloorLength: number;   // m, pivot/heel to cutting edge along the floor
+    bucketBackHeight: number;    // m
+    tyre: { radius: number; width: number };
+    cab: { frontX: number; rearX: number; width: number; ropsHeight: number };
+    rearBody: { rearX: number; width: number; height: number };
   };
+  operatorSeat: OperatorSeatSpec;
+  gyration: Record<string, number>;
+  dataGaps?: string[];
   masses: {
     rearFrame: { mass: number; cg: Vec3 };      // ground frame
     counterweight: { mass: number; cg: Vec3 };  // ground frame (rear)
@@ -198,4 +208,47 @@ export const armAngleForBucketPivotHeight = (p: LoaderProfile, height: number): 
   const s = (height - g.armPivot.z) / g.armLength;
   if (s < -1 || s > 1) throw new Error("height not reachable");
   return Math.asin(s);
+};
+
+export const loaderHull = (p: LoaderProfile, inp: LoaderInputs, geo: LoaderGeometryState): HullPoint[] => {
+  const g = p.geometry, pts: HullPoint[] = [];
+  for (const x of [g.cab.frontX, g.cab.rearX]) for (const y of [g.cab.width / 2, -g.cab.width / 2])
+    pts.push({ id: `rops${x === g.cab.frontX ? "F" : "R"}${y > 0 ? "L" : "R"}`, tag: "rops", label: "Cab ROPS", p: v(x, y, g.cab.ropsHeight) });
+  for (const y of [g.rearBody.width / 2, -g.rearBody.width / 2]) {
+    pts.push({ id: `rearTop${y > 0 ? "L" : "R"}`, tag: "counterweight", label: "Engine hood and counterweight", p: v(g.rearBody.rearX, y, g.rearBody.height) });
+    pts.push({ id: `rearLow${y > 0 ? "L" : "R"}`, tag: "counterweight", label: "Counterweight", p: v(g.rearBody.rearX, y, 0.6) });
+  }
+  const tw = g.tyre.width / 2;
+  for (const y of [g.trackRear / 2 + tw, -g.trackRear / 2 - tw])
+    pts.push({ id: `tyreR${y > 0 ? "L" : "R"}`, tag: "tyre", label: "Tyre", p: v(g.rearAxleX, y, 2 * g.tyre.radius) });
+  for (const y of [g.trackFront / 2 + tw, -g.trackFront / 2 - tw])
+    pts.push({ id: `tyreF${y > 0 ? "L" : "R"}`, tag: "tyre", label: "Tyre", p: transformPoint(geo.frontFrame, v(g.frontAxleX, y, 2 * g.tyre.radius)) });
+  for (const [x, z, n] of [[g.bucketFloorLength, 0, "edge"], [-0.15, g.bucketBackHeight, "top"], [0, 0, "heel"]] as const)
+    for (const y of [g.bucketWidth / 2, -g.bucketWidth / 2])
+      pts.push({ id: `bucket-${n}${y > 0 ? "L" : "R"}`, tag: "bucket", label: "Bucket", p: transformPoint(geo.bucketFrame, v(x, y, z)) });
+  return pts;
+};
+
+export const loaderDynamics = (s: LoaderState, opts: { behaviour: OperatorBehaviour; jumpSide?: "fall" | "high"; manoeuvre?: ManoeuvreSpec; dt?: number; tEnd?: number }): DynamicsResult => {
+  const p = s.profile, P = s.inputs.payload;
+  const m = opts.manoeuvre;
+  const setup: DynamicsSetup = {
+    stability: s.stability, terrain: s.inputs.terrain,
+    hull: loaderHull(p, s.inputs, s.geometry), gyration: p.gyration,
+    ...(m ? { accel: (t: number) => (t < m.duration ? m.acceleration : v(0, 0, 0)) } : {}),
+    operator: {
+      seat: v(p.operatorSeat.hip.x, p.operatorSeat.hip.y, p.operatorSeat.hip.z), mass: p.masses.operator.mass,
+      behaviour: opts.behaviour, enclosedCab: p.operatorSeat.enclosedCab, seatFriction: p.operatorSeat.seatFriction,
+      reactionTime: 0.4, jumpSpeed: 2.5, jumpSide: opts.jumpSide ?? "fall",
+    },
+    ...(opts.dt ? { dt: opts.dt } : {}),
+    ...(opts.tEnd ? { tEnd: opts.tEnd } : {}),
+  };
+  if (P) setup.payload = {
+    mode: "granular", secured: false, friction: 0, angleOfRepose: P.angleOfRepose,
+    normal: transformDir(s.geometry.bucketFrame, v(-Math.sin(p.geometry.bucketFloorAngle), 0, Math.cos(p.geometry.bucketFloorAngle))),
+    outward: transformDir(s.geometry.bucketFrame, v(Math.cos(p.geometry.bucketFloorAngle), 0, Math.sin(p.geometry.bucketFloorAngle))),
+    hull: [], halfHeight: 0.15,
+  };
+  return simulateTipOver(setup);
 };

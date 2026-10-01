@@ -12,3 +12,4 @@ export * from "./retention.js";
 export * from "./compliance.js";
 export * from "./explain.js";
 export const PHYSICS_MODEL_VERSION = "0.1.0-static-quasistatic";
+export * from "./dynamics.js";

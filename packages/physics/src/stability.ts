@@ -87,6 +87,8 @@ export interface StabilityResult {
   liftedContact: SupportPoint | undefined;
   /** Height the lifted contact has risen (m). */
   liftedContactHeight: number;
+  /** Rigid rotation applied to the chassis to roll it onto the stop (apply to any chassis-fixed point). */
+  roll: { point: Vec3; axis: Vec3; angle: number } | undefined;
   /** Component CGs as evaluated (rolled onto the stop if stage ≠ axle-free). */
   components: MassComponent[];
   cg: CgSummary;
@@ -168,6 +170,7 @@ export const evaluateStability = (inp: StabilityInputs): StabilityResult => {
   let chassisRoll = 0;
   let liftedContact: SupportPoint | undefined;
   let liftedContactHeight = 0;
+  let rollT: StabilityResult["roll"];
 
   const crit = resultantEval.critical;
   const isLateral = crit.from.id === s.pivot.id || crit.to.id === s.pivot.id;
@@ -182,6 +185,7 @@ export const evaluateStability = (inp: StabilityInputs): StabilityResult => {
     // Choose the rotation sense that lifts the far rigid contact.
     const trial = rotateAboutLine(far.p, crit.from.p, axisDir, roll);
     const sign = trial.z > far.p.z ? 1 : -1;
+    rollT = { point: crit.from.p, axis: axisDir, angle: sign * roll };
     components = inp.components.map((c) => ({ ...c, cg: rotateAboutLine(c.cg, crit.from.p, axisDir, sign * roll) }));
     liftedContact = far;
     liftedContactHeight = rotateAboutLine(far.p, crit.from.p, axisDir, sign * roll).z - far.p.z;
@@ -206,9 +210,13 @@ export const evaluateStability = (inp: StabilityInputs): StabilityResult => {
   if (slidingPredicted && status !== "incipient-tipping" && status !== "lift-off") status = "sliding-predicted";
 
   return {
-    stage, status, chassisRoll, liftedContact, liftedContactHeight,
+    stage, status, chassisRoll, liftedContact, liftedContactHeight, roll: rollT,
     components, cg: summariseCg(components), cgUnrolled,
     gravityDir: gDir, resultantDir, gravityEval, resultantEval, quasiStatic, reactions, gravityReactions,
     requiredFriction, availableFriction: terrain.friction, slidingPredicted, notes,
   };
 };
+
+/** Apply the stop-engagement roll (if any) to a chassis-fixed point. */
+export const applyRoll = (r: StabilityResult, p: Vec3): Vec3 =>
+  r.roll ? rotateAboutLine(p, r.roll.point, r.roll.axis, r.roll.angle) : p;

@@ -25,3 +25,6 @@ export const ldInputs = (over: Partial<LoaderInputs> = {}): LoaderInputs => ({
 });
 
 export const slope = (deg: number, headingDeg: number, friction = 0.7): Terrain => ({ slopeAngle: deg * Math.PI / 180, heading: headingDeg * Math.PI / 180, friction });
+
+import catJson from "../../../profiles/loader/caterpillar-950f.draft.json";
+export const cat950f = (): LoaderProfile => resolveDatums<LoaderProfile>(catJson as unknown as Datumised<LoaderProfile>);

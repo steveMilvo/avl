@@ -1,12 +1,16 @@
-# 7. Open questions for the client
+# 7. Client decisions (answered 2026-10-01)
 
-1. **Training computers.** What hardware will run this (laptops with integrated graphics, desktops with
-   discrete GPUs, projectors, tablets)? Is internet available on site? This decides browser vs Unreal.
-2. **Real machines.** Which forklifts and loaders do the sites actually use (make, model, capacity,
-   attachments)? Can we get data plates, spec sheets, and permission to weigh/measure one machine of each?
-3. **Consequence realism.** How far should the "dangerous load" outcomes go: machine tips and load
-   falls with dust/impact effects; operator ejection shown abstractly; or stop at the tipping moment
-   with a slow-motion replay? Any sensitivity limits (no human figures, no injury depiction)?
-4. **Engineering reviewer.** Is there an engineer available to sign off the review checkpoint?
-5. **Branding and language.** Organisation name/logo, and preferred terminology (e.g. "FEL" vs "wheel loader").
-6. **Delivery.** Single organisation use, or to be distributed to other RTOs?
+| Question | Answer | Consequence for the build |
+|---|---|---|
+| Training computers | Laptops with a dedicated graphics card | High-quality real-time rendering is viable (PBR, soft shadows, HDR sky, post-processing). See `02-deployment.md` for the engine choice. |
+| Real machines | To be advised. Front-end loader: Caterpillar 950F | A Cat 950F profile will be built from published specifications where they exist. Missing data is listed, never invented. Forklift remains generic until a model is advised. |
+| Consequence realism | Realistic. Operators shown. Physics-driven outcomes to possible fall, entrapment etc. **No blood.** Tipping moment with slow-motion replay. | Tip-over dynamics, load release and operator motion come from the model. Outcomes are reported as mechanical facts (fall height, impact speed, position under the structure), not injuries. No blood, gore or injury depiction. |
+| Engineering reviewer | Not available | No profile can reach `released-for-training`. All quantitative results stay labelled illustrative. The report template keeps a review section for when one is engaged. |
+| Branding | SiteReadyAI (sitereadyai.com.au) | Product shown as "LoadLab by SiteReadyAI". |
+| Terminology | "Front end loader", "forklift" | UI uses these terms throughout. |
+
+## Still open
+
+- Which forklift make and model, and its capacity plate.
+- Access to the actual Cat 950F (serial number, bucket, tyres, counterweight) to measure axle loads.
+- Whether training sites need fully offline use.

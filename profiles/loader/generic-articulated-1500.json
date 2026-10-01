@@ -9,41 +9,338 @@
     "configuration": "General-purpose bucket 1.5 m³ heaped, standard counterweight, 17.5R25 tyres",
     "releaseStatus": "generic-educational",
     "notes": "ALL VALUES ASSUMED. Representative of an ~8.5 t articulated loader with a 1.5 m³ bucket, intended only to demonstrate the physics. No published tipping-load or rated-operating-load data is included, so the application must show 'Operating limit not verified' for this profile.",
-    "references": ["ISO 14397-1 (loader tipping-load methodology) — scope and current edition to be verified before any validation claim"]
+    "references": [
+      "ISO 14397-1 (loader tipping-load methodology) — scope and current edition to be verified before any validation claim"
+    ]
   },
   "geometry": {
-    "rearAxleX": { "value": -1450, "unit": "mm", "status": "assumed", "note": "behind the articulation joint" },
-    "frontAxleX": { "value": 1450, "unit": "mm", "status": "assumed", "note": "ahead of the joint, front frame" },
-    "trackFront": { "value": 1900, "unit": "mm", "status": "assumed" },
-    "trackRear": { "value": 1900, "unit": "mm", "status": "assumed" },
-    "rearAxlePivotHeight": { "value": 550, "unit": "mm", "status": "assumed" },
-    "rearAxleOscillationLimit": { "value": 10, "unit": "deg", "status": "assumed" },
-    "articulationLimit": { "value": 40, "unit": "deg", "status": "assumed" },
-    "armPivot": { "x": { "value": 950, "unit": "mm", "status": "assumed" }, "z": { "value": 1900, "unit": "mm", "status": "assumed" } },
-    "armLength": { "value": 2100, "unit": "mm", "status": "assumed", "note": "arm pivot to bucket pivot" },
-    "armAngleMin": { "value": -46, "unit": "deg", "status": "assumed", "note": "bucket pivot ~390 mm above ground" },
-    "armAngleMax": { "value": 45, "unit": "deg", "status": "assumed", "note": "bucket pivot ~3.4 m above ground" },
-    "bucketAngleMin": { "value": -45, "unit": "deg", "status": "assumed", "note": "full dump" },
-    "bucketAngleMax": { "value": 45, "unit": "deg", "status": "assumed", "note": "full roll-back" },
-    "bucketStruckVolume": { "value": 1.3, "unit": "m3", "status": "assumed" },
-    "bucketHeapedVolume": { "value": 1.5, "unit": "m3", "status": "assumed" },
-    "bucketWidth": { "value": 2400, "unit": "mm", "status": "assumed" },
-    "bucketFillCentroid": { "x": { "value": 550, "unit": "mm", "status": "assumed" }, "z": { "value": 350, "unit": "mm", "status": "assumed", "note": "level struck fill, relative to bucket pivot, bucket frame" } },
-    "bucketFloorAngle": { "value": 0, "unit": "deg", "status": "assumed" }
+    "rearAxleX": {
+      "value": -1450,
+      "unit": "mm",
+      "status": "assumed",
+      "note": "behind the articulation joint"
+    },
+    "frontAxleX": {
+      "value": 1450,
+      "unit": "mm",
+      "status": "assumed",
+      "note": "ahead of the joint, front frame"
+    },
+    "trackFront": {
+      "value": 1900,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "trackRear": {
+      "value": 1900,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "rearAxlePivotHeight": {
+      "value": 550,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "rearAxleOscillationLimit": {
+      "value": 10,
+      "unit": "deg",
+      "status": "assumed"
+    },
+    "articulationLimit": {
+      "value": 40,
+      "unit": "deg",
+      "status": "assumed"
+    },
+    "armPivot": {
+      "x": {
+        "value": 950,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "z": {
+        "value": 1900,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "armLength": {
+      "value": 2100,
+      "unit": "mm",
+      "status": "assumed",
+      "note": "arm pivot to bucket pivot"
+    },
+    "armAngleMin": {
+      "value": -46,
+      "unit": "deg",
+      "status": "assumed",
+      "note": "bucket pivot ~390 mm above ground"
+    },
+    "armAngleMax": {
+      "value": 45,
+      "unit": "deg",
+      "status": "assumed",
+      "note": "bucket pivot ~3.4 m above ground"
+    },
+    "bucketAngleMin": {
+      "value": -45,
+      "unit": "deg",
+      "status": "assumed",
+      "note": "full dump"
+    },
+    "bucketAngleMax": {
+      "value": 45,
+      "unit": "deg",
+      "status": "assumed",
+      "note": "full roll-back"
+    },
+    "bucketStruckVolume": {
+      "value": 1.3,
+      "unit": "m3",
+      "status": "assumed"
+    },
+    "bucketHeapedVolume": {
+      "value": 1.5,
+      "unit": "m3",
+      "status": "assumed"
+    },
+    "bucketWidth": {
+      "value": 2400,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "bucketFillCentroid": {
+      "x": {
+        "value": 550,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "z": {
+        "value": 350,
+        "unit": "mm",
+        "status": "assumed",
+        "note": "level struck fill, relative to bucket pivot, bucket frame"
+      }
+    },
+    "bucketFloorAngle": {
+      "value": 0,
+      "unit": "deg",
+      "status": "assumed"
+    },
+    "tyre": {
+      "radius": {
+        "value": 675,
+        "unit": "mm",
+        "status": "assumed",
+        "note": "17.5R25"
+      },
+      "width": {
+        "value": 445,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "cab": {
+      "frontX": {
+        "value": 100,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "rearX": {
+        "value": -1150,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "width": {
+        "value": 1300,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "ropsHeight": {
+        "value": 3000,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "rearBody": {
+      "rearX": {
+        "value": -2650,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "width": {
+        "value": 1800,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "height": {
+        "value": 1900,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "bucketFloorLength": {
+      "value": 1000,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "bucketBackHeight": {
+      "value": 900,
+      "unit": "mm",
+      "status": "assumed"
+    }
   },
   "masses": {
-    "rearFrame": { "mass": { "value": 3900, "unit": "kg", "status": "assumed", "note": "engine, transmission, cab, rear axle" },
-                   "cg": { "x": { "value": -1100, "unit": "mm", "status": "assumed" }, "y": { "value": 0, "unit": "mm", "status": "assumed" }, "z": { "value": 1000, "unit": "mm", "status": "assumed" } } },
-    "counterweight": { "mass": { "value": 900, "unit": "kg", "status": "assumed" },
-                       "cg": { "x": { "value": -2300, "unit": "mm", "status": "assumed" }, "y": { "value": 0, "unit": "mm", "status": "assumed" }, "z": { "value": 700, "unit": "mm", "status": "assumed" } } },
-    "frontFrame": { "mass": { "value": 2000, "unit": "kg", "status": "assumed", "note": "front frame, front axle, lift tower" },
-                    "cg": { "x": { "value": 1100, "unit": "mm", "status": "assumed" }, "y": { "value": 0, "unit": "mm", "status": "assumed" }, "z": { "value": 700, "unit": "mm", "status": "assumed", "note": "front frame" } } },
-    "operator": { "mass": { "value": 85, "unit": "kg", "status": "assumed" },
-                  "cg": { "x": { "value": -400, "unit": "mm", "status": "assumed" }, "y": { "value": 0, "unit": "mm", "status": "assumed" }, "z": { "value": 1600, "unit": "mm", "status": "assumed", "note": "cab on rear frame" } } },
-    "arms": { "mass": { "value": 900, "unit": "kg", "status": "assumed", "note": "arms, Z-bar linkage, lift and tilt cylinders" },
-              "cg": { "x": { "value": 1000, "unit": "mm", "status": "assumed" }, "y": { "value": 0, "unit": "mm", "status": "assumed" }, "z": { "value": 100, "unit": "mm", "status": "assumed", "note": "arm frame" } } },
-    "bucket": { "mass": { "value": 700, "unit": "kg", "status": "assumed" },
-                "cg": { "x": { "value": 450, "unit": "mm", "status": "assumed" }, "y": { "value": 0, "unit": "mm", "status": "assumed" }, "z": { "value": 300, "unit": "mm", "status": "assumed", "note": "bucket frame" } } }
+    "rearFrame": {
+      "mass": {
+        "value": 3900,
+        "unit": "kg",
+        "status": "assumed",
+        "note": "engine, transmission, cab, rear axle"
+      },
+      "cg": {
+        "x": {
+          "value": -1100,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 1000,
+          "unit": "mm",
+          "status": "assumed"
+        }
+      }
+    },
+    "counterweight": {
+      "mass": {
+        "value": 900,
+        "unit": "kg",
+        "status": "assumed"
+      },
+      "cg": {
+        "x": {
+          "value": -2300,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 700,
+          "unit": "mm",
+          "status": "assumed"
+        }
+      }
+    },
+    "frontFrame": {
+      "mass": {
+        "value": 2000,
+        "unit": "kg",
+        "status": "assumed",
+        "note": "front frame, front axle, lift tower"
+      },
+      "cg": {
+        "x": {
+          "value": 1100,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 700,
+          "unit": "mm",
+          "status": "assumed",
+          "note": "front frame"
+        }
+      }
+    },
+    "operator": {
+      "mass": {
+        "value": 85,
+        "unit": "kg",
+        "status": "assumed"
+      },
+      "cg": {
+        "x": {
+          "value": -400,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 1600,
+          "unit": "mm",
+          "status": "assumed",
+          "note": "cab on rear frame"
+        }
+      }
+    },
+    "arms": {
+      "mass": {
+        "value": 900,
+        "unit": "kg",
+        "status": "assumed",
+        "note": "arms, Z-bar linkage, lift and tilt cylinders"
+      },
+      "cg": {
+        "x": {
+          "value": 1000,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 100,
+          "unit": "mm",
+          "status": "assumed",
+          "note": "arm frame"
+        }
+      }
+    },
+    "bucket": {
+      "mass": {
+        "value": 700,
+        "unit": "kg",
+        "status": "assumed"
+      },
+      "cg": {
+        "x": {
+          "value": 450,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 300,
+          "unit": "mm",
+          "status": "assumed",
+          "note": "bucket frame"
+        }
+      }
+    }
   },
   "capacity": {
     "status": "assumed",
@@ -51,7 +348,75 @@
     "testConfiguration": "n/a"
   },
   "restrictions": {
-    "maxTravelSlopeLoaded": { "value": 15, "unit": "deg", "status": "assumed", "note": "illustrative" },
+    "maxTravelSlopeLoaded": {
+      "value": 15,
+      "unit": "deg",
+      "status": "assumed",
+      "note": "illustrative"
+    },
     "note": "Illustrative restrictions for the generic profile."
+  },
+  "operatorSeat": {
+    "hip": {
+      "x": {
+        "value": -450,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "y": {
+        "value": 0,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "z": {
+        "value": 1550,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "enclosedCab": true,
+    "seatFriction": {
+      "value": 0.5,
+      "unit": "1",
+      "status": "assumed"
+    },
+    "seatbeltFitted": true
+  },
+  "gyration": {
+    "rearFrame": {
+      "value": 0.8,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "counterweight": {
+      "value": 0.4,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "frontFrame": {
+      "value": 0.7,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "arms": {
+      "value": 0.7,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "bucket": {
+      "value": 0.6,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "operator": {
+      "value": 0.3,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "payload": {
+      "value": 0.5,
+      "unit": "m",
+      "status": "assumed"
+    }
   }
 }

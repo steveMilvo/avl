@@ -16,6 +16,7 @@ export interface Datum {
 }
 
 export type ProfileReleaseStatus =
+  | "draft-unverified"
   | "generic-educational"
   | "manufacturer-data-entered"
   | "physics-validated"
@@ -71,8 +72,16 @@ export const dataConfidence = (profile: { meta: ProfileMeta } & Record<string, u
     profile.meta.releaseStatus === "released-for-training" ? "Reviewed and released for training"
     : profile.meta.releaseStatus === "physics-validated" ? `Physics validated: ${profile.meta.validationScope ?? "scope not stated"}`
     : profile.meta.releaseStatus === "manufacturer-data-entered" ? "Manufacturer data entered, not validated"
+    : profile.meta.releaseStatus === "draft-unverified" ? "Draft profile: unverified third-party data, assumed mass distribution — results illustrative only"
     : "Generic educational profile — results illustrative only";
   return { counts, verifiedFraction, releaseStatus: profile.meta.releaseStatus, label };
 };
 
 export const val = (d: Datum): number => d.value;
+
+export interface OperatorSeatSpec {
+  hip: { x: number; y: number; z: number };
+  enclosedCab: boolean;
+  seatFriction: number;
+  seatbeltFitted: boolean;
+}

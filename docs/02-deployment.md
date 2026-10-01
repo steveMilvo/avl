@@ -3,28 +3,25 @@
 The brief requires this decision before implementation and warns not to assume a browser build has
 native Unreal capability.
 
-| Criterion | Native Unreal Engine 5 (Windows) | Browser (Three.js / WebGL2, optional WebGPU) |
+| Criterion | Native Unreal Engine 5 (Windows) | Browser engine (Three.js / WebGL2) |
 |---|---|---|
-| Visual ceiling | Highest: Lumen GI, Nanite, virtual shadow maps, film-quality PBR | Good PBR with baked/IBL lighting, real-time shadows, SSAO, bloom. No dynamic GI at Unreal level |
-| Hardware needed | Discrete GPU (roughly GTX 1660 / RX 5600 class or better) for Lumen at 1080p; 8–16 GB RAM; ~5–15 GB install | Integrated graphics on a recent laptop is enough at projector resolutions; runs on Chromebooks and locked-down school/TAFE PCs |
-| Install / IT approval | Installer, admin rights, per-machine updates, AV/whitelisting | URL or offline static folder; no install; updates by redeploy |
-| Physics core reuse | Must port to C++ or run TS via an embedded JS runtime; or call a C++ port of the same model | TypeScript core runs directly; same code in tests, app and reports |
-| Transparency / testability | Unreal Chaos physics is a black box for teaching; we would still need our own model | Our own model is the physics; renderer only draws it |
-| Classroom projector use | Excellent | Excellent |
-| Offline sites (yards, wineries with poor connectivity) | Native, offline | Packaged as a PWA or Electron/Tauri desktop wrapper: offline |
-| Development cost and speed | Higher (C++/Blueprints, asset pipeline, build infrastructure) | Lower; faster iteration with trainers |
-| Future VR | Strong | WebXR possible, weaker |
+| Visual ceiling | Highest: Lumen GI, Nanite, virtual shadow maps | Good PBR with image-based lighting, real-time soft shadows, ambient occlusion, bloom, tone mapping. No dynamic global illumination at Unreal level |
+| Hardware needed | Discrete GPU for Lumen at 1080p; 8–16 GB RAM; large install | Integrated graphics works; a discrete GPU allows full shadow and post-processing quality |
+| Install / IT approval | Installer, admin rights, per-machine updates | Opens in Chrome/Edge from a URL or a local folder; can be wrapped as a desktop app |
+| Physics core reuse | Port to C++ and re-verify against the benchmark suite | TypeScript core runs directly; one codebase for tests, app and reports |
+| Transparency / testability | Engine physics is a black box; our own model is still needed | Our own model is the physics; the renderer only draws it |
+| Development cost and speed | Higher | Lower; faster iteration with trainers |
 
-## Recommendation (pending confirmation — see `07-open-questions.md`)
+## Decision
 
-**Browser-based real-time 3D first, packaged as an offline desktop app (Tauri/Electron) for sites
-without reliable internet,** with the physics core kept engine-agnostic.
+The client's training laptops have dedicated graphics cards, so either approach would run.
+**Release 1 uses the browser engine (Three.js, WebGL2) at its highest quality settings**, because:
 
-Rationale: the brief's priority is correct, explainable physics on typical training computers, and the
-physics must not be delegated to a game engine's solver anyway. The browser build will look like a
-high-quality real-time product (PBR materials, HDRI lighting, soft shadows, detailed tyres/mast/
-cylinders), but it will **not** match Unreal's Lumen/Nanite fidelity, and we will not claim it does.
+1. The physics must come from our own tested model, not a game-engine solver, so Unreal's main
+   advantage over a browser engine is lighting fidelity, not correctness.
+2. One TypeScript codebase keeps the app, tests and reports in exact agreement.
+3. Trainers can run it from a link or a folder without IT installs.
 
-If the client's training PCs have discrete GPUs and photorealism is a hard requirement, an Unreal 5
-front end can be added later, driving the same physics core (C++ port verified against the same
-benchmark suite).
+It will **not** match Unreal's Lumen/Nanite photorealism, and the product makes no such claim.
+The physics core stays engine-agnostic, so an Unreal 5 front end can be added later if photorealism
+becomes a hard requirement. That front end would drive a C++ port verified against the same benchmarks.

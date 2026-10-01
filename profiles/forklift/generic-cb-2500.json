@@ -12,42 +12,408 @@
     "references": []
   },
   "geometry": {
-    "wheelbase": { "value": 1700, "unit": "mm", "status": "assumed" },
-    "trackFront": { "value": 1000, "unit": "mm", "status": "assumed", "note": "centre-to-centre of tyre contact patches" },
-    "trackRear": { "value": 950, "unit": "mm", "status": "assumed" },
-    "rearAxlePivotHeight": { "value": 350, "unit": "mm", "status": "assumed" },
-    "rearAxleOscillationLimit": { "value": 4, "unit": "deg", "status": "assumed", "note": "chassis-to-axle roll before the stop engages" },
-    "mastPivot": { "x": { "value": -100, "unit": "mm", "status": "assumed" }, "z": { "value": 450, "unit": "mm", "status": "assumed" } },
-    "forkFaceX": { "value": 550, "unit": "mm", "status": "assumed", "note": "fork face forward of the tilt pivot, mast frame" },
-    "forkTopZ": { "value": -370, "unit": "mm", "status": "assumed", "note": "fork top surface relative to the tilt pivot at zero lift (80 mm above ground)" },
-    "forkLength": { "value": 1070, "unit": "mm", "status": "assumed" },
-    "maxLift": { "value": 4500, "unit": "mm", "status": "assumed" },
-    "tiltBackMax": { "value": 10, "unit": "deg", "status": "assumed" },
-    "tiltForwardMax": { "value": 6, "unit": "deg", "status": "assumed" },
-    "sideShiftMax": { "value": 100, "unit": "mm", "status": "assumed" }
+    "wheelbase": {
+      "value": 1700,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "trackFront": {
+      "value": 1000,
+      "unit": "mm",
+      "status": "assumed",
+      "note": "centre-to-centre of tyre contact patches"
+    },
+    "trackRear": {
+      "value": 950,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "rearAxlePivotHeight": {
+      "value": 350,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "rearAxleOscillationLimit": {
+      "value": 4,
+      "unit": "deg",
+      "status": "assumed",
+      "note": "chassis-to-axle roll before the stop engages"
+    },
+    "mastPivot": {
+      "x": {
+        "value": -100,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "z": {
+        "value": 450,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "forkFaceX": {
+      "value": 550,
+      "unit": "mm",
+      "status": "assumed",
+      "note": "fork face forward of the tilt pivot, mast frame"
+    },
+    "forkTopZ": {
+      "value": -370,
+      "unit": "mm",
+      "status": "assumed",
+      "note": "fork top surface relative to the tilt pivot at zero lift (80 mm above ground)"
+    },
+    "forkLength": {
+      "value": 1070,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "maxLift": {
+      "value": 4500,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "tiltBackMax": {
+      "value": 10,
+      "unit": "deg",
+      "status": "assumed"
+    },
+    "tiltForwardMax": {
+      "value": 6,
+      "unit": "deg",
+      "status": "assumed"
+    },
+    "sideShiftMax": {
+      "value": 100,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "tyreFront": {
+      "radius": {
+        "value": 330,
+        "unit": "mm",
+        "status": "assumed",
+        "note": "7.00-12 pneumatic"
+      },
+      "width": {
+        "value": 180,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "tyreRear": {
+      "radius": {
+        "value": 280,
+        "unit": "mm",
+        "status": "assumed",
+        "note": "6.00-9 pneumatic"
+      },
+      "width": {
+        "value": 150,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "body": {
+      "rearX": {
+        "value": -2050,
+        "unit": "mm",
+        "status": "assumed",
+        "note": "rear face of counterweight"
+      },
+      "width": {
+        "value": 1150,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "counterweightTop": {
+        "value": 1150,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "hoodHeight": {
+        "value": 1250,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "overheadGuard": {
+      "frontX": {
+        "value": -250,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "rearX": {
+        "value": -1350,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "width": {
+        "value": 1050,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "height": {
+        "value": 2150,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "mastCollapsedHeight": {
+      "value": 2050,
+      "unit": "mm",
+      "status": "assumed",
+      "note": "top of outer mast above ground, forks lowered"
+    },
+    "freeLift": {
+      "value": 1500,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "mastWidth": {
+      "value": 900,
+      "unit": "mm",
+      "status": "assumed"
+    },
+    "forkSpacing": {
+      "value": 800,
+      "unit": "mm",
+      "status": "assumed",
+      "note": "centre to centre"
+    }
   },
   "masses": {
-    "chassis": { "mass": { "value": 1900, "unit": "kg", "status": "assumed", "note": "frame, engine, transmission, overhead guard, tyres; excludes counterweight, mast, operator" },
-                 "cg": { "x": { "value": -750, "unit": "mm", "status": "assumed" }, "y": { "value": 0, "unit": "mm", "status": "assumed" }, "z": { "value": 600, "unit": "mm", "status": "assumed" } } },
-    "counterweight": { "mass": { "value": 1300, "unit": "kg", "status": "assumed" },
-                       "cg": { "x": { "value": -1550, "unit": "mm", "status": "assumed" }, "y": { "value": 0, "unit": "mm", "status": "assumed" }, "z": { "value": 550, "unit": "mm", "status": "assumed" } } },
-    "operator": { "mass": { "value": 85, "unit": "kg", "status": "assumed" },
-                  "cg": { "x": { "value": -900, "unit": "mm", "status": "assumed" }, "y": { "value": 0, "unit": "mm", "status": "assumed" }, "z": { "value": 1000, "unit": "mm", "status": "assumed" } } },
-    "mast": { "mass": { "value": 550, "unit": "kg", "status": "assumed", "note": "fixed outer mast, tilt cylinders" },
-              "cg": { "x": { "value": 100, "unit": "mm", "status": "assumed" }, "y": { "value": 0, "unit": "mm", "status": "assumed" }, "z": { "value": 1200, "unit": "mm", "status": "assumed", "note": "mast frame, relative to tilt pivot" } } },
-    "carriage": { "mass": { "value": 250, "unit": "kg", "status": "assumed", "note": "inner mast sections, carriage, side shifter, forks" },
-                  "cg": { "x": { "value": 150, "unit": "mm", "status": "assumed" }, "y": { "value": 0, "unit": "mm", "status": "assumed" }, "z": { "value": 100, "unit": "mm", "status": "assumed", "note": "relative to fork heel on the fork top surface" } } }
+    "chassis": {
+      "mass": {
+        "value": 1900,
+        "unit": "kg",
+        "status": "assumed",
+        "note": "frame, engine, transmission, overhead guard, tyres; excludes counterweight, mast, operator"
+      },
+      "cg": {
+        "x": {
+          "value": -750,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 600,
+          "unit": "mm",
+          "status": "assumed"
+        }
+      }
+    },
+    "counterweight": {
+      "mass": {
+        "value": 1300,
+        "unit": "kg",
+        "status": "assumed"
+      },
+      "cg": {
+        "x": {
+          "value": -1550,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 550,
+          "unit": "mm",
+          "status": "assumed"
+        }
+      }
+    },
+    "operator": {
+      "mass": {
+        "value": 85,
+        "unit": "kg",
+        "status": "assumed"
+      },
+      "cg": {
+        "x": {
+          "value": -900,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 1000,
+          "unit": "mm",
+          "status": "assumed"
+        }
+      }
+    },
+    "mast": {
+      "mass": {
+        "value": 550,
+        "unit": "kg",
+        "status": "assumed",
+        "note": "fixed outer mast, tilt cylinders"
+      },
+      "cg": {
+        "x": {
+          "value": 100,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 1200,
+          "unit": "mm",
+          "status": "assumed",
+          "note": "mast frame, relative to tilt pivot"
+        }
+      }
+    },
+    "carriage": {
+      "mass": {
+        "value": 250,
+        "unit": "kg",
+        "status": "assumed",
+        "note": "inner mast sections, carriage, side shifter, forks"
+      },
+      "cg": {
+        "x": {
+          "value": 150,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "y": {
+          "value": 0,
+          "unit": "mm",
+          "status": "assumed"
+        },
+        "z": {
+          "value": 100,
+          "unit": "mm",
+          "status": "assumed",
+          "note": "relative to fork heel on the fork top surface"
+        }
+      }
+    }
   },
   "capacity": [
-    { "loadCentre_m": 0.5, "maxForkHeight_m": 4.5, "capacity_kg": 2500, "status": "assumed", "source": "Illustrative plate for the generic profile. Not a manufacturer rating." },
-    { "loadCentre_m": 0.6, "maxForkHeight_m": 4.5, "capacity_kg": 2250, "status": "assumed" },
-    { "loadCentre_m": 0.7, "maxForkHeight_m": 4.5, "capacity_kg": 2000, "status": "assumed" },
-    { "loadCentre_m": 0.8, "maxForkHeight_m": 4.5, "capacity_kg": 1800, "status": "assumed" },
-    { "loadCentre_m": 1.0, "maxForkHeight_m": 4.5, "capacity_kg": 1500, "status": "assumed" }
+    {
+      "loadCentre_m": 0.5,
+      "maxForkHeight_m": 4.5,
+      "capacity_kg": 2500,
+      "status": "assumed",
+      "source": "Illustrative plate for the generic profile. Not a manufacturer rating."
+    },
+    {
+      "loadCentre_m": 0.6,
+      "maxForkHeight_m": 4.5,
+      "capacity_kg": 2250,
+      "status": "assumed"
+    },
+    {
+      "loadCentre_m": 0.7,
+      "maxForkHeight_m": 4.5,
+      "capacity_kg": 2000,
+      "status": "assumed"
+    },
+    {
+      "loadCentre_m": 0.8,
+      "maxForkHeight_m": 4.5,
+      "capacity_kg": 1800,
+      "status": "assumed"
+    },
+    {
+      "loadCentre_m": 1.0,
+      "maxForkHeight_m": 4.5,
+      "capacity_kg": 1500,
+      "status": "assumed"
+    }
   ],
   "restrictions": {
-    "maxTravelSlopeLoaded": { "value": 5.7, "unit": "deg", "status": "assumed", "note": "10 % grade, illustrative" },
-    "maxTravelLiftHeight": { "value": 300, "unit": "mm", "status": "assumed", "note": "travel with forks lowered, illustrative" },
+    "maxTravelSlopeLoaded": {
+      "value": 5.7,
+      "unit": "deg",
+      "status": "assumed",
+      "note": "10 % grade, illustrative"
+    },
+    "maxTravelLiftHeight": {
+      "value": 300,
+      "unit": "mm",
+      "status": "assumed",
+      "note": "travel with forks lowered, illustrative"
+    },
     "note": "Illustrative restrictions for the generic profile."
+  },
+  "operatorSeat": {
+    "hip": {
+      "x": {
+        "value": -950,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "y": {
+        "value": 0,
+        "unit": "mm",
+        "status": "assumed"
+      },
+      "z": {
+        "value": 1050,
+        "unit": "mm",
+        "status": "assumed"
+      }
+    },
+    "enclosedCab": false,
+    "seatFriction": {
+      "value": 0.5,
+      "unit": "1",
+      "status": "assumed",
+      "note": "trousers on vinyl seat, assumed"
+    },
+    "seatbeltFitted": true
+  },
+  "gyration": {
+    "chassis": {
+      "value": 0.55,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "counterweight": {
+      "value": 0.35,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "mast": {
+      "value": 0.6,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "carriage": {
+      "value": 0.35,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "operator": {
+      "value": 0.3,
+      "unit": "m",
+      "status": "assumed"
+    },
+    "payload": {
+      "value": 0.4,
+      "unit": "m",
+      "status": "assumed"
+    }
   }
 }
