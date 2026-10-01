@@ -1,40 +1,50 @@
-# LoadLab — Forklift and Loader Stability Simulator
+# LoadLab — Forklift and Front End Loader Stability Simulator
 
-Interactive 3D training simulator for counterbalanced forklift and articulated front-end loader
-operators (Australian workplace context: winery warehouses, loading yards, bulk-material handling).
+**by SiteReadyAI** · [sitereadyai.com.au](https://sitereadyai.com.au)
 
-> **Status: stage 2 of 8 — headless physics proof.** No rendering yet, by design: the brief requires
-> verifiable calculations before visuals. All machine data in this repository is **generic and assumed**.
-> Results are illustrative only and are not operating limits for any real machine.
+Interactive 3D training simulator for counterbalanced forklift and articulated front end loader
+operators: winery warehouses, loading yards and bulk-material handling.
+
+The trainer changes load, lift height, tilt, articulation, slope and movement. The app shows where the
+centres of gravity go, which tipping axis applies, how wheel loads change, and — when the model says the
+machine or load is unstable — a physics-driven tip-over with operator and load outcomes and a
+slow-motion replay. No outcome is scripted; everything comes from the tested physics core.
+
+> **Status: working prototype (stages 1–6 of 8).** All machine data is **generic or unverified draft
+> data**. Results are illustrative only and are **not operating limits** for any real machine. An
+> independent engineering review is required before any machine-specific quantitative training claim.
+
+## Run it
+
+```bash
+pnpm install
+pnpm dev            # opens the app at http://localhost:5173
+pnpm test           # 62 physics benchmark and regression tests
+pnpm build:single   # apps/web/dist-single/index.html — one file, double-click to open offline
+```
+
+Every CI run also publishes the single-file offline build as the `LoadLab-offline` artifact.
+Recommended: Chrome or Edge on a laptop with a dedicated graphics card.
+
+## What's in it
+
+| Area | Highlights |
+|---|---|
+| Machines | Generic 2.5 t counterbalanced forklift · generic 1.5 m³ front end loader · **Caterpillar 950F draft** (unverified listing data, assumed mass split) |
+| Modes | Explore · Guided lessons (18 scenarios: predict → run → inspect → explain) · Trainer comparison (A/B side by side, lockable variables) |
+| Teaching overlays | Blue machine CG · orange payload CG · magenta combined CG · world-vertical gravity line · cyan inertial resultant · support outline · tipping axis with margin · tyre reactions · CG trail · baseline ghost |
+| Results | Four separate verdicts: calculated stability · manufacturer capacity · operating restrictions · data confidence. No "SAFE" badge. "Operating limit not verified" when data is missing |
+| Dynamics | Multi-stage rigid-body tip-over, load sliding/toppling off forks, bucket spill, operator seatbelt / no belt / jump, crush and entrapment zone, dust on impact. No blood or injury depiction |
+| Playback | Run · pause · step · scrub · 1× to 0.05× · slow-motion replay of the tipping moment · cameras: orbit, side, front, rear, overhead, operator, tip view |
+| Outputs | Engineering view · screenshot · HTML report · scenario export/import · saved presets |
 
 ## Repository layout
 
 | Path | Purpose |
 |---|---|
-| `docs/` | Brief analysis, architecture, deployment decision, data requirements, model scope, validation plan, open questions |
-| `packages/physics/` | Physics core (TypeScript, no rendering dependencies). SI units, documented frames |
-| `packages/physics/test/` | Analytical benchmarks and regression tests (`pnpm test`) |
-| `profiles/` | Versioned machine profiles (JSON). Every number carries unit, source and status |
-| `scenarios/` | Reproducible scenario files (lesson presets) |
-| `apps/` | Training application (stage 5, not started) |
-
-## Quick start
-
-```bash
-pnpm install
-pnpm test        # 47 analytical / regression tests
-pnpm bench       # prints the priority loader slope matrix and forklift lesson matrix
-```
-
-## Development sequence (from the brief)
-
-1. ✅ Architecture, model scope and data requirements — `docs/`
-2. ✅ Headless physics proof with analytical benchmarks — `packages/physics`
-3. ✅ (draft) One forklift and one articulated loader demonstration profile — `profiles/`
-4. ⏳ Priority articulated-loader slope comparison (physics done, UI pending)
-5. ⏳ Interactive 3D rendering and engineering overlays
-6. ⏳ Training scenarios and comparison mode
-7. ⏳ Validation report and documented limitations
-8. ⏳ Deployable application, source code and setup instructions
-
-See `docs/07-open-questions.md` for decisions needed from the client.
+| `docs/` | Brief analysis, deployment decision, architecture, data requirements, model scope, validation, client decisions, trainer guide |
+| `packages/physics/` | Physics core in TypeScript, separate from rendering. SI units, documented frames |
+| `packages/physics/test/` | Analytical benchmarks and regression tests |
+| `profiles/` | Versioned machine profiles. Every number carries unit, source and status |
+| `scenarios/` | Reproducible scenario files |
+| `apps/web/` | Three.js training application |

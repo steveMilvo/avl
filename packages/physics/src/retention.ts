@@ -1,4 +1,4 @@
-import { type Vec3, dot, scale, sub, norm, normalize, apply, transpose, type Frame } from "./math.js";
+import { type Vec3, dot, scale, sub, normalize, apply, transpose, type Frame } from "./math.js";
 import { type PayloadSpec, type ForkliftState } from "./forklift.js";
 import { type LoaderState } from "./loader.js";
 import { G } from "./units.js";
@@ -32,50 +32,63 @@ export interface ForkliftRetentionResult {
   notes: string[];
 }
 
+/** Specific force acting on the load, expressed in the carriage frame (x along the forks, y left, z normal to the fork surface). */
+export interface ForkLoadCheck {
+  status: RetentionStatus;
+  requiredFriction: number;
+  restrainedByBackrest: boolean;
+  footprintMargins: { front: number; rear: number; left: number; right: number };
+  notes: string[];
+}
+
+/**
+ * Retention of an unsecured load on the forks.
+ * Support region on the fork surface: longitudinally from the fork face (backrest) or the load's rear face
+ * to the nearer of the load's front face and the fork tips; laterally the narrower of the load width and the
+ * outside edges of the tines. Sliding along the forks is resisted by friction (toward the backrest by the
+ * backrest when the load touches it). Sideways sliding is prevented when the tines are engaged in pallet
+ * pockets; otherwise friction applies. Toppling: the load's own force line leaves the support region.
+ */
+export const checkForkLoad = (fl: Vec3, L: PayloadSpec, loadCentre: number, forkLength: number, forkSpacing: number): ForkLoadCheck => {
+  const notes: string[] = [];
+  const normal = -fl.z;
+  if (normal <= 0) return { status: "toppling-predicted", requiredFriction: Infinity, restrainedByBackrest: false, footprintMargins: { front: -1, rear: -1, left: -1, right: -1 }, notes: ["The specific force lifts the load off the forks."] };
+  const latRestrained = L.laterallyRestrained ?? true;
+  const backrest = L.gapFromForkFace <= 1e-6;
+  const h = L.height / 2 + L.cgOffset.z;
+  const px = loadCentre + (fl.x / normal) * h, py = L.cgOffset.y + (fl.y / normal) * h;
+  const half = Math.min(L.width / 2, forkSpacing / 2 + 0.06);
+  const xFront = Math.min(L.gapFromForkFace + L.length, forkLength);
+  const footprintMargins = { front: xFront - px, rear: backrest ? Infinity : px - L.gapFromForkFace, left: half - py, right: py + half };
+  // friction demand along the directions that friction must resist
+  const tx = fl.x > 0 || !backrest ? fl.x : 0;
+  const ty = latRestrained ? 0 : fl.y;
+  const requiredFriction = Math.hypot(tx, ty) / normal;
+  let status: RetentionStatus = "retained";
+  if (Math.min(footprintMargins.front, footprintMargins.rear, footprintMargins.left, footprintMargins.right) < 0) {
+    status = "toppling-predicted"; notes.push("The load's own force line falls outside its support on the forks.");
+  } else if (requiredFriction > L.loadFriction) {
+    status = "sliding-predicted"; notes.push(`Friction needed ${requiredFriction.toFixed(2)} exceeds the ${L.loadFriction.toFixed(2)} available on the forks.`);
+  }
+  if (fl.x < 0 && backrest) notes.push("Rearward tendency is taken by the load backrest.");
+  if (latRestrained && Math.abs(fl.y) > 1e-6) notes.push("Sideways tendency is taken by the tines in the pallet pockets.");
+  return { status, requiredFriction, restrainedByBackrest: backrest && fl.x < 0, footprintMargins, notes };
+};
+
 export const forkliftLoadRetention = (s: ForkliftState): ForkliftRetentionResult => {
   const L: PayloadSpec | null = s.inputs.payload;
   const none = { requiredFriction: 0, availableFriction: 0, slideDirection: undefined, restrainedByBackrest: false, footprintMargins: { front: 0, rear: 0, left: 0, right: 0 }, notes: [] };
   if (!L) return { status: "no-load", ...none };
   if (L.secured) return { status: "secured", ...none, notes: ["Load is secured: retention assumed by the restraint (not modelled)."] };
-
-  // Specific force on the load (per unit mass), ground frame. If the machine has rolled onto a stop
-  // the fork plane has rolled with it; use the as-evaluated orientation.
   const gDir = gravityDirInGroundFrame(s.inputs.terrain);
   const a = s.inputs.acceleration ?? { x: 0, y: 0, z: 0 };
   const f = sub(scale(gDir, G), a);
-  // Express in the carriage (fork) frame: x along forks, y lateral, z normal to the fork surface.
   const cf: Frame = s.geometry.carriageFrame;
   const fl = apply(transpose(cf.R), f);
-  const normal = -fl.z;                   // positive = pressing onto the forks
-  const tangential = { x: fl.x, y: fl.y };
-  const tmag = Math.hypot(tangential.x, tangential.y);
-  const notes: string[] = [];
-  if (normal <= 0) {
-    return { status: "toppling-predicted", requiredFriction: Infinity, availableFriction: L.loadFriction, slideDirection: undefined, restrainedByBackrest: false, footprintMargins: { front: -1, rear: -1, left: -1, right: -1 }, notes: ["Specific force lifts the load off the forks."] };
-  }
-  const requiredFriction = tmag / normal;
-  const restrainedByBackrest = tangential.x < 0 && Math.abs(tangential.y) < 1e-9 && L.gapFromForkFace === 0;
-
-  // Toppling: project the load CG along the specific force to the fork plane; compare with the base footprint.
-  const lc = s.geometry.loadCentre ?? 0;
-  const cgLocal = { x: lc, y: L.cgOffset.y, z: L.height / 2 + L.cgOffset.z }; // carriage frame
-  const t = cgLocal.z / normal;
-  const px = cgLocal.x + fl.x * t, py = cgLocal.y + fl.y * t;
-  const xRear = L.gapFromForkFace, xFront = L.gapFromForkFace + L.length;
-  const footprintMargins = {
-    front: xFront - px, rear: px - xRear,
-    left: L.cgOffset.y + L.width / 2 - py, right: py - (L.cgOffset.y - L.width / 2),
-  };
-  const toppling = Math.min(footprintMargins.front, footprintMargins.rear, footprintMargins.left, footprintMargins.right) < 0;
-  let status: RetentionStatus = "retained";
-  if (toppling) { status = "toppling-predicted"; notes.push("The load's own force line falls outside its base on the forks."); }
-  else if (requiredFriction > L.loadFriction && !restrainedByBackrest) {
-    status = "sliding-predicted";
-    notes.push(`Required friction ${requiredFriction.toFixed(2)} exceeds available ${L.loadFriction.toFixed(2)} on the fork surface.`);
-  } else if (requiredFriction > L.loadFriction && restrainedByBackrest) notes.push("Sliding tendency is toward the backrest, which reacts it.");
-
-  const slideDirection = tmag > 0 ? normalize(apply(cf.R, { x: tangential.x, y: tangential.y, z: 0 })) : undefined;
-  return { status, requiredFriction, availableFriction: L.loadFriction, slideDirection, restrainedByBackrest, footprintMargins, notes };
+  const r = checkForkLoad(fl, L, s.geometry.loadCentre ?? 0, s.profile.geometry.forkLength, s.profile.geometry.forkSpacing);
+  const t = { x: fl.x, y: fl.y, z: 0 };
+  const slideDirection = Math.hypot(t.x, t.y) > 0 ? normalize(apply(cf.R, t)) : undefined;
+  return { ...r, availableFriction: L.loadFriction, slideDirection };
 };
 
 export interface BucketRetentionResult {
@@ -105,4 +118,4 @@ export const bucketRetention = (s: LoaderState): BucketRetentionResult => {
   return { status, effectiveFloorSlope, angleOfRepose: P.angleOfRepose, notes };
 };
 
-export const specificForceMagnitude = (f: Vec3): number => norm(f);
+

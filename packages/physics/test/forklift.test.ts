@@ -230,3 +230,22 @@ describe("forklift: quasi-static inertial forces and load retention", () => {
     expect(forkliftCompliance(s).restriction).toBe("operating-restriction-breached");
   });
 });
+
+describe("forklift: load retention on the tines", () => {
+  it("a palletised load on a cross slope does not slide sideways (tines in pockets); an unrestrained pipe bundle does", () => {
+    const pal = evaluateForklift(P, fkInputs({ payload: pallet(800, { loadFriction: 0.2 }), terrain: slope(15, 90), allowOutsideLimits: true }));
+    expect(forkliftLoadRetention(pal).status).toBe("retained");
+    const pipes = evaluateForklift(P, fkInputs({ payload: pallet(800, { loadFriction: 0.2, laterallyRestrained: false, height: 0.5 }), terrain: slope(15, 90), allowOutsideLimits: true }));
+    const r = forkliftLoadRetention(pipes);
+    expect(r.status).toBe("sliding-predicted");
+    expect(Math.abs(r.requiredFriction - Math.tan(rad(15)))).toBeLessThan(0.02);
+  });
+  it("a tall pallet topples sideways over the outside of the tines when the slope exceeds atan(half-span / CG height)", () => {
+    const H = 2.4, half = P.geometry.forkSpacing / 2 + 0.06;
+    const lim = Math.atan(half / (H / 2)) * 180 / Math.PI;
+    const below = evaluateForklift(P, fkInputs({ payload: pallet(600, { height: H, loadFriction: 0.6 }), tiltBack: 0, terrain: slope(lim - 1.5, 90), allowOutsideLimits: true }));
+    const above = evaluateForklift(P, fkInputs({ payload: pallet(600, { height: H, loadFriction: 0.6 }), tiltBack: 0, terrain: slope(lim + 1.5, 90), allowOutsideLimits: true }));
+    expect(forkliftLoadRetention(below).status).toBe("retained");
+    expect(forkliftLoadRetention(above).status).toBe("toppling-predicted");
+  });
+});

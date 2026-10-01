@@ -4,6 +4,7 @@ import { type OscillatingAxleSupport, evaluateStability, type StabilityResult } 
 import { type Terrain } from "./terrain.js";
 import { type ProfileMeta, type CapacityEntry, type OperatorSeatSpec } from "./profile.js";
 import { type HullPoint, type DynamicsSetup, type OperatorBehaviour, simulateTipOver, type DynamicsResult } from "./dynamics.js";
+import { checkForkLoad } from "./retention.js";
 
 /**
  * Counterbalanced forklift model.
@@ -74,6 +75,8 @@ export interface PayloadSpec {
   secured: boolean;
   /** Friction coefficient between load base and fork surface. */
   loadFriction: number;
+  /** Forks engaged in pallet/container pockets, so the load cannot slide sideways off the tines. Default true. */
+  laterallyRestrained?: boolean;
   label?: string;
 }
 
@@ -240,6 +243,10 @@ export const forkliftDynamics = (s: ForkliftState, opts: { behaviour: OperatorBe
     mode: "rigid", secured: L.secured, friction: L.loadFriction, angleOfRepose: 0,
     normal: s.geometry.forkPlaneNormal, outward: transformDir(s.geometry.carriageFrame, v(1, 0, 0)),
     hull: forkliftPayloadHull(s.inputs, s.geometry), halfHeight: L.height / 2,
+    forkCheck: (fl) => {
+      const r = checkForkLoad(fl, L, s.geometry.loadCentre ?? 0, p.geometry.forkLength, p.geometry.forkSpacing);
+      return { release: r.status !== "retained", why: r.status === "toppling-predicted" ? "toppled off the forks" : "slid off the forks" };
+    },
   };
   return simulateTipOver(setup);
 };

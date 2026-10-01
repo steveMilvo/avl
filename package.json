@@ -2,9 +2,12 @@
   "name": "loadlab",
   "private": true,
   "version": "0.1.0",
-  "description": "LoadLab — forklift and articulated loader stability simulator for operator training",
+  "description": "LoadLab \u2014 forklift and articulated loader stability simulator for operator training",
   "packageManager": "pnpm@10.28.0",
   "scripts": {
+    "dev": "pnpm --filter @loadlab/web dev",
+    "build": "pnpm --filter @loadlab/web build",
+    "build:single": "pnpm --filter @loadlab/web build:single",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "bench": "pnpm --filter @loadlab/physics bench"

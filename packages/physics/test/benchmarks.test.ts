@@ -44,3 +44,23 @@ describe("benchmark report", () => {
     expect(rows.length).toBe(cases.length);
   });
 });
+
+describe("Cat 950F draft: predicted vs listed static tipping load (reported, not tuned)", () => {
+  it("prints predicted straight and full-turn tipping loads", async () => {
+    const { cat950f } = await import("./fixtures.js");
+    const C = cat950f();
+    const tip = (art: number) => {
+      let lo = 0, hi = 40000;
+      for (let i = 0; i < 50; i++) {
+        const mid = (lo + hi) / 2;
+        const s = evaluateLoader(C, ldInputs({ armAngle: 0, bucketAngle: C.geometry.bucketAngleMax, articulation: art, payload: bucketLoad({ mass: mid }) }));
+        if (s.stability.status === "incipient-tipping") hi = mid; else lo = mid;
+      }
+      return lo;
+    };
+    const straight = tip(0), full = tip(C.geometry.articulationLimit);
+    const listed = C.capacity.staticTippingLoadStraight_kg!;
+    console.log(`Cat 950F draft — predicted static tipping load: straight ${straight.toFixed(0)} kg, full turn ${full.toFixed(0)} kg; listed (unverified, configuration unknown) ${listed} kg; straight discrepancy ${(((straight - listed) / listed) * 100).toFixed(0)} %`);
+    expect(full).toBeLessThan(straight);
+  });
+});

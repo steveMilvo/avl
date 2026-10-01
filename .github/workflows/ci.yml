@@ -18,3 +18,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm --filter @loadlab/web build:single
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LoadLab-offline
+          path: apps/web/dist-single/index.html
