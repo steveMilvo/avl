@@ -64,7 +64,9 @@ export const explainChange = (before: StabilityResult, after: StabilityResult): 
     if (rb && Math.abs(ra.normal - rb.normal) > 1) reactionChanges.push({ id: ra.id, label: ra.label, before: rb.normal, after: ra.normal });
   }
   const unloaded = reactionChanges.filter((r) => r.after < r.before).sort((a, b) => (a.after - a.before) - (b.after - b.before))[0];
-  if (unloaded) sentences.push(`${unloaded.label} reaction fell from ${kN(unloaded.before)} to ${kN(unloaded.after)}.`);
+  if (unloaded) sentences.push(unloaded.after <= 0
+    ? `${unloaded.label} reaction fell from ${kN(Math.max(0, unloaded.before))} to zero: that wheel lifts.`
+    : `${unloaded.label} reaction fell from ${kN(unloaded.before)} to ${kN(unloaded.after)}.`);
 
   const momentChanges: ChangeExplanation["momentChanges"] = [];
   if (cb.id === ca.id) {
