@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "scenario.loader.priority-slope-comparison.v1",
+  "title": "Articulated loader on a cross slope: straight vs full articulation",
+  "machineProfile": "generic.loader.articulated-1500.v1",
+  "lockedVariables": ["payload", "terrain", "armAngle", "bucketAngle"],
+  "baseline": {
+    "armAngle_deg": -35, "bucketAngle_deg": 35, "articulation_deg": 0,
+    "payload": { "density_kg_m3": 1600, "fillVolume_m3": 1.2, "cgOffset_m": [0, 0, 0], "angleOfRepose_deg": 35, "label": "Gravel" },
+    "terrain": { "slope_deg": 10, "heading_deg": 90, "friction": 0.6 }
+  },
+  "variants": [
+    { "label": "Half articulation left", "articulation_deg": 20 },
+    { "label": "Full articulation left", "articulation_deg": 40 },
+    { "label": "Full articulation right", "articulation_deg": -40 }
+  ],
+  "learnerPrompt": "Predict which articulation is closest to tipping and which wheel unloads first.",
+  "note": "Generic profile: results illustrative only."
+}
