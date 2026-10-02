@@ -1,11 +1,11 @@
 import * as THREE from "three";
-import { type DynamicsResult, type ForkliftState, type LoaderState, type Vec3, gravityDirInGroundFrame, scale, G, sub, normalize, v } from "@loadlab/physics";
+import { type DynamicsResult, type DynFrame, type ForkliftState, type LoaderState, type Vec3, gravityDirInGroundFrame, scale, G, sub, normalize, v, compose, apply, transformPoint } from "@loadlab/physics";
 import { Stage } from "./environment.js";
 import { ForkliftModel } from "./forkliftModel.js";
 import { LoaderModel } from "./loaderModel.js";
 import { Overlays } from "./overlays.js";
 import { DustBurst, SpillParticles } from "./effects.js";
-import { T } from "./coords.js";
+import { T, mat3ToThree } from "./coords.js";
 import { materialFor } from "./materials.js";
 import { FORKLIFTS, LOADERS, type Evaluation, type MachineUI } from "../app/state.js";
 
@@ -21,6 +21,10 @@ export class MachineView {
   private loadRelease: { t: number; matrix: THREE.Matrix4; p: Vec3 } | null = null;
   private opReleaseT: number | null = null;
   engineering = false;
+  private pathLine: THREE.Line | null = null;
+  private lastArt: number | null = null;
+  /** Frame shown at the current playback time. */
+  current: DynFrame | null = null;
 
   constructor(renderer: THREE.WebGLRenderer) {
     this.stage = new Stage(renderer);
@@ -89,6 +93,12 @@ export class MachineView {
       const land = d.events.find((x) => x.type === "payload-landed");
       if (land) { const fx = new DustBurst(d.payloadOutcome.landedAt, land.t, 2000 * (d.payloadOutcome.impactSpeed ?? 1)); this.effects.push(fx); this.stage.groundFrame.add(fx); }
     }
+    // travelled path of the machine (reference point under the machine), drawn on the ground
+    const pts = d.frames.filter((_, i) => i % 3 === 0).map((f) => T({ x: f.travel.t.x, y: f.travel.t.y, z: 0.03 }));
+    if (pts.length > 1 && pts[0]!.distanceTo(pts[pts.length - 1]!) > 0.05) {
+      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: 0xffd400, dashSize: 0.4, gapSize: 0.25 }));
+      line.computeLineDistances(); this.pathLine = line; this.stage.groundFrame.add(line);
+    }
     const rel = d.events.find((x) => x.type === "payload-released");
     if (rel && e.ui.kind === "loader") {
       const f = this.frameAt(rel.t);
@@ -102,7 +112,16 @@ export class MachineView {
 
   clearDynamics() {
     for (const fx of this.effects) fx.removeFromParent();
-    this.effects = []; this.dyn = null; this.loadRelease = null; this.opReleaseT = null;
+    this.effects = []; this.dyn = null; this.loadRelease = null; this.opReleaseT = null; this.current = null;
+    if (this.pathLine) { this.pathLine.removeFromParent(); this.pathLine.geometry.dispose(); this.pathLine = null; }
+    if (this.model) {
+      this.model.root.matrix.identity(); this.model.root.matrixWorldNeedsUpdate = true;
+      this.model.setWheels(0, 0);
+      if (this.evaluation && this.lastArt !== null) {
+        if (this.model instanceof LoaderModel) this.model.update(this.evaluation.state as LoaderState);
+        this.lastArt = null;
+      }
+    }
     if (this.model instanceof ForkliftModel && this.model.load && this.model.load.parent !== this.model.loadHolder) {
       this.model.loadHolder.add(this.model.load); this.model.load.matrixAutoUpdate = true;
       const u = this.evaluation?.ui; if (u && u.kind === "forklift") this.model.load.position.copy(T(v(u.load.gap + u.load.length / 2, 0, 0)));
@@ -116,6 +135,13 @@ export class MachineView {
     if (this.model instanceof LoaderModel && this.model.heap) this.model.heap.visible = true;
   }
 
+  /** Site position of the machine at the current playback frame (for camera follow). */
+  sitePosition(): Vec3 {
+    const f = this.current; if (!f) return v(0, 0, 0);
+    const c = this.model instanceof ForkliftModel ? v(-0.6, 0, 0) : v(0, 0, 0);
+    return transformPoint(f.travel, c);
+  }
+
   frameAt(t: number) {
     const fr = this.dyn?.frames; if (!fr || !fr.length) return undefined;
     let lo = 0, hi = fr.length - 1;
@@ -127,8 +153,17 @@ export class MachineView {
   setTime(t: number) {
     const d = this.dyn, e = this.evaluation; if (!d || !e || !this.model) return;
     const f = this.frameAt(t); if (!f) return;
+    this.current = f;
     const pose = f.pose;
+    // live machine configuration while driving (loader articulation changes as it steers)
+    if (this.model instanceof LoaderModel && f.state) {
+      const ls = f.state as LoaderState;
+      if (this.lastArt === null || Math.abs(ls.inputs.articulation - this.lastArt) > 1e-4) { this.model.update(ls); this.lastArt = ls.inputs.articulation; }
+    }
+    this.model.root.matrix.copy(mat3ToThree(f.travel.R, f.travel.t)); this.model.root.matrixWorldNeedsUpdate = true;
+    this.model.roll.matrix.copy(mat3ToThree(f.roll.R, f.roll.t)); this.model.roll.matrixWorldNeedsUpdate = true;
     this.model.setPose(pose);
+    this.model.setWheels(f.motion.dist, f.motion.steer);
     for (const fx of this.effects) fx.setTime(t);
 
     // load
@@ -165,7 +200,7 @@ export class MachineView {
       op.position.copy(T(f.operator.p));
       if (f.operator.landed) {
         op.lying();
-        const fall = normalize(sub(f.operator.p, d.hinge.from));
+        const fall = normalize(sub(f.operator.p, f.travel.t));
         op.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), T({ x: fall.x, y: fall.y, z: 0 }).normalize());
         op.rotateX(Math.PI / 2); op.rotateZ(-Math.PI / 2);
         op.position.copy(T({ ...f.operator.p, z: 0.15 }));
@@ -178,7 +213,12 @@ export class MachineView {
       this.model.roll.add(op); const hip = this.model.profile.operatorSeat.hip; op.position.copy(T(hip)); op.quaternion.identity(); op.seated();
     }
 
-    this.overlays.update(e.state.stability, { pose, moving: t > 0.02 && d.machineOutcome !== "stable", payloadReleased: released, recordTrail: false });
+    const gSite = e.state.stability.gravityDir;
+    const res = sub(scale(gSite, G), apply(f.travel.R, f.accel));
+    this.overlays.update(f.stability, {
+      pose: compose(f.travel, pose), moving: !f.onWheels, payloadReleased: released, recordTrail: false,
+      gravitySite: gSite, resultantSite: normalize(res), showResultant: Math.hypot(f.accel.x, f.accel.y) > 0.05,
+    });
   }
 
   private clearLoadRelease() {

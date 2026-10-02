@@ -3,8 +3,8 @@ import { type MassComponent } from "./mass.js";
 import { type OscillatingAxleSupport, evaluateStability, type StabilityResult } from "./stability.js";
 import { type Terrain } from "./terrain.js";
 import { type ProfileMeta, type OperatorSeatSpec } from "./profile.js";
-import { type HullPoint, type DynamicsSetup, type OperatorBehaviour, simulateTipOver, type DynamicsResult } from "./dynamics.js";
-import { type ManoeuvreSpec } from "./forklift.js";
+import { type HullPoint, type DynamicsSetup, simulateTipOver, type DynamicsResult, type TipContext, buildMotion, loaderKappa } from "./dynamics.js";
+import { type DynamicsOptions } from "./forklift.js";
 
 /**
  * Articulated front-end loader model.
@@ -229,13 +229,37 @@ export const loaderHull = (p: LoaderProfile, inp: LoaderInputs, geo: LoaderGeome
   return pts;
 };
 
-export const loaderDynamics = (s: LoaderState, opts: { behaviour: OperatorBehaviour; jumpSide?: "fall" | "high"; manoeuvre?: ManoeuvreSpec; dt?: number; tEnd?: number }): DynamicsResult => {
-  const p = s.profile, P = s.inputs.payload;
+const loaderPayloadSetup = (p: LoaderProfile, inputs: LoaderInputs, geo: LoaderGeometryState) => {
+  const P = inputs.payload;
+  if (!P) return undefined;
+  return {
+    mode: "granular" as const, secured: false, friction: 0, angleOfRepose: P.angleOfRepose,
+    normal: transformDir(geo.bucketFrame, v(-Math.sin(p.geometry.bucketFloorAngle), 0, Math.cos(p.geometry.bucketFloorAngle))),
+    outward: transformDir(geo.bucketFrame, v(Math.cos(p.geometry.bucketFloorAngle), 0, Math.sin(p.geometry.bucketFloorAngle))),
+    hull: [], halfHeight: 0.15,
+  };
+};
+
+export const loaderContext = (p: LoaderProfile, inputs: LoaderInputs): TipContext => {
+  const st = evaluateLoader(p, inputs);
+  const payload = loaderPayloadSetup(p, inputs, st.geometry);
+  return { stability: st.stability, hull: loaderHull(p, inputs, st.geometry), ...(payload ? { payload } : {}), state: st };
+};
+
+/** Turn radius (m) of the rear-axle centre for an articulation angle. */
+export const loaderTurnRadius = (p: LoaderProfile, articulation: number): number =>
+  Math.abs(1 / loaderKappa(p.geometry.frontAxleX, p.geometry.rearAxleX, articulation));
+
+export const loaderDynamics = (s: LoaderState, opts: DynamicsOptions): DynamicsResult => {
+  const p = s.profile;
   const m = opts.manoeuvre;
+  const tr = opts.travel;
+  const base = { ...s.inputs, allowOutsideLimits: true };
+  delete (base as { acceleration?: Vec3 }).acceleration;
   const setup: DynamicsSetup = {
     stability: s.stability, terrain: s.inputs.terrain,
     hull: loaderHull(p, s.inputs, s.geometry), gyration: p.gyration,
-    ...(m ? { accel: (t: number) => (t < m.duration ? m.acceleration : v(0, 0, 0)) } : {}),
+    ...(m && !tr ? { accel: (t: number) => (t < m.duration ? m.acceleration : v(0, 0, 0)) } : {}),
     operator: {
       seat: v(p.operatorSeat.hip.x, p.operatorSeat.hip.y, p.operatorSeat.hip.z), mass: p.masses.operator.mass,
       behaviour: opts.behaviour, enclosedCab: p.operatorSeat.enclosedCab, seatFriction: p.operatorSeat.seatFriction,
@@ -244,11 +268,23 @@ export const loaderDynamics = (s: LoaderState, opts: { behaviour: OperatorBehavi
     ...(opts.dt ? { dt: opts.dt } : {}),
     ...(opts.tEnd ? { tEnd: opts.tEnd } : {}),
   };
-  if (P) setup.payload = {
-    mode: "granular", secured: false, friction: 0, angleOfRepose: P.angleOfRepose,
-    normal: transformDir(s.geometry.bucketFrame, v(-Math.sin(p.geometry.bucketFloorAngle), 0, Math.cos(p.geometry.bucketFloorAngle))),
-    outward: transformDir(s.geometry.bucketFrame, v(Math.cos(p.geometry.bucketFloorAngle), 0, Math.sin(p.geometry.bucketFloorAngle))),
-    hull: [], halfHeight: 0.15,
-  };
+  const payload = loaderPayloadSetup(p, s.inputs, s.geometry);
+  if (payload) setup.payload = payload;
+  if (tr) {
+    const noOperator = { ...p, masses: { ...p.masses, operator: { ...p.masses.operator, mass: 0 } } };
+    const g = p.geometry;
+    // Articulated steering: the turn ramps the articulation from straight to the set angle; any other
+    // manoeuvre keeps the set articulation, so an articulated loader always travels on a curve.
+    setup.motion = buildMotion(tr, {
+      ref: v(g.rearAxleX, 0, 0), cg: s.stability.cgUnrolled.combined.cg,
+      steerTurn: s.inputs.articulation, steerConst: tr.kind === "turn" ? 0 : s.inputs.articulation,
+      kappaOf: (gam) => loaderKappa(g.frontAxleX, g.rearAxleX, gam),
+    });
+    setup.evaluate = (yaw, a, steer, rm) => loaderContext(rm.operator ? noOperator : p, {
+      ...base, articulation: steer, terrain: { ...s.inputs.terrain, heading: s.inputs.terrain.heading + yaw },
+      ...(a.x !== 0 || a.y !== 0 || a.z !== 0 ? { acceleration: a } : {}),
+      ...(rm.payload ? { payload: null } : {}),
+    });
+  }
   return simulateTipOver(setup);
 };

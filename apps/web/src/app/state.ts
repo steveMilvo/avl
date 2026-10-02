@@ -2,7 +2,7 @@ import {
   resolveDatums, type Datumised, type ForkliftProfile, type LoaderProfile, type ForkliftInputs, type LoaderInputs,
   type ForkliftState, type LoaderState, evaluateForklift, evaluateLoader, forkliftLoadRetention, bucketRetention,
   forkliftCompliance, loaderCompliance, forkliftDynamics, loaderDynamics, dataConfidence, rad, v, type Vec3,
-  type DynamicsResult, type OperatorBehaviour, type ComplianceResult, type DataConfidence, type ManoeuvreSpec,
+  type DynamicsResult, type OperatorBehaviour, type ComplianceResult, type DataConfidence, type TravelSpec, loaderTurnRadius,
   type ForkliftRetentionResult, type BucketRetentionResult, G,
 } from "@loadlab/physics";
 import fk2500 from "../../../../profiles/forklift/generic-cb-2500.json";
@@ -66,7 +66,7 @@ export const defaultForklift = (): ForkliftUI => ({
   kind: "forklift", profileId: fk2500.meta.id, liftHeight: 0.15, tiltDeg: 3, sideShift: 0,
   load: { preset: "cartons", mass: 900, length: 1.0, width: 1.2, height: 1.2, cgX: 0, cgY: 0, cgZ: 0, gap: 0, secured: false, friction: 0.4, fill: 1 },
   terrain: { slopeDeg: 0, headingDeg: 0, friction: 0.7 },
-  manoeuvre: { type: "none", travel: "forward", accel: 3, duration: 0.8, speedKmh: 10, radius: 4, turn: "left" },
+  manoeuvre: { type: "none", travel: "forward", accel: 3, duration: 3, speedKmh: 10, radius: 4, turn: "left" },
   operator: { behaviour: "belted", jumpSide: "fall" }, trainerDemo: false,
 });
 
@@ -74,28 +74,40 @@ export const defaultLoader = (profileId: string = ld1500.meta.id): LoaderUI => (
   kind: "loader", profileId, armDeg: -25, bucketDeg: 35, articulationDeg: 0,
   load: { material: "gravel", massMode: "density", density: 1700, volume: profileId === cat950f.meta.id ? 2.5 : 1.2, mass: 2000, lateral: 0, reposeDeg: 38 },
   terrain: { slopeDeg: 0, headingDeg: 0, friction: 0.6 },
-  manoeuvre: { type: "none", travel: "forward", accel: 2.5, duration: 0.8, speedKmh: 10, radius: 7, turn: "left" },
+  manoeuvre: { type: "none", travel: "forward", accel: 2.5, duration: 3, speedKmh: 10, radius: 7, turn: "left" },
   operator: { behaviour: "belted", jumpSide: "fall" }, trainerDemo: false,
 });
 
 const terrain = (t: TerrainUI) => ({ slopeAngle: rad(t.slopeDeg), heading: rad(t.headingDeg), friction: t.friction });
 
 /** Quasi-static acceleration of the machine (ground frame). */
-export const manoeuvreAccel = (m: ManoeuvreUI): Vec3 | undefined => {
+/** Signed path radius (m, +left) of the turn, or undefined when the machine cannot turn. */
+export const turnRadius = (u: MachineUI): number | undefined => {
+  if (u.kind === "forklift") return u.manoeuvre.turn === "left" ? u.manoeuvre.radius : -u.manoeuvre.radius;
+  if (Math.abs(u.articulationDeg) < 0.5) return undefined;
+  const p = LOADERS[u.profileId]!;
+  const R = loaderTurnRadius(p, rad(u.articulationDeg));
+  return u.articulationDeg > 0 ? R : -R;
+};
+
+/** Peak quasi-static acceleration of the machine (ground frame) for the static view. */
+export const manoeuvreAccel = (u: MachineUI): Vec3 | undefined => {
+  const m = u.manoeuvre;
   const dir = m.travel === "forward" ? 1 : -1;
   if (m.type === "brake") return v(-dir * m.accel, 0, 0);
   if (m.type === "accelerate") return v(dir * m.accel, 0, 0);
-  if (m.type === "turn") { const vv = m.speedKmh / 3.6, a = (vv * vv) / Math.max(0.5, m.radius); return v(0, m.turn === "left" ? a : -a, 0); }
+  if (m.type === "turn") { const R = turnRadius(u); if (R === undefined) return undefined; const vv = m.speedKmh / 3.6; return v(0, (vv * vv) / R, 0); }
   return undefined;
 };
-export const manoeuvreSpec = (m: ManoeuvreUI): ManoeuvreSpec | undefined => {
-  const a = manoeuvreAccel(m); if (!a) return undefined;
-  return { acceleration: a, duration: m.type === "turn" ? Math.max(m.duration, 1.5) : m.duration };
+
+export const travelSpec = (u: MachineUI): TravelSpec => {
+  const m = u.manoeuvre;
+  return { kind: m.type, dir: m.travel === "forward" ? 1 : -1, speed: m.speedKmh / 3.6, accel: m.accel, turnTime: m.duration, radius: turnRadius(u) ?? 1e6 };
 };
 
 export const forkliftInputs = (u: ForkliftUI): ForkliftInputs => {
   const L = u.load;
-  const acc = manoeuvreAccel(u.manoeuvre);
+  const acc = manoeuvreAccel(u);
   return {
     liftHeight: u.liftHeight, tiltBack: rad(u.tiltDeg), sideShift: u.sideShift,
     payload: L.preset === "none" ? null : {
@@ -108,7 +120,7 @@ export const forkliftInputs = (u: ForkliftUI): ForkliftInputs => {
 
 export const loaderInputs = (u: LoaderUI): LoaderInputs => {
   const L = u.load;
-  const acc = manoeuvreAccel(u.manoeuvre);
+  const acc = manoeuvreAccel(u);
   return {
     armAngle: rad(u.armDeg), bucketAngle: rad(u.bucketDeg), articulation: rad(u.articulationDeg),
     payload: L.material === "none" ? null : {
@@ -146,8 +158,7 @@ export const evaluate = (u: MachineUI): Evaluation => {
 
 export const runDynamics = (e: Evaluation): DynamicsResult => {
   const u = e.ui;
-  const man = manoeuvreSpec(u.manoeuvre);
-  const opts = { behaviour: u.operator.behaviour, jumpSide: u.operator.jumpSide, ...(man ? { manoeuvre: man } : {}), tEnd: 6 };
+  const opts = { behaviour: u.operator.behaviour, jumpSide: u.operator.jumpSide, travel: travelSpec(u) };
   return u.kind === "forklift" ? forkliftDynamics(e.state as ForkliftState, opts) : loaderDynamics(e.state as LoaderState, opts);
 };
 

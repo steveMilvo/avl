@@ -30,6 +30,9 @@ export class ForkliftModel {
   private liftCyl: THREE.Mesh;
   private liftRod: THREE.Mesh;
   private bodyMeshes: THREE.Mesh[] = [];
+  /** Rolling wheels (spin about their axle) and steering pivots. */
+  private wheels: { w: THREE.Group; r: number }[] = [];
+  private steerPivots: THREE.Group[] = [];
 
   constructor(public profile: ForkliftProfile) {
     const p = profile, g = p.geometry;
@@ -75,7 +78,8 @@ export class ForkliftModel {
     const lpg = pcyl(v(-1.62, 0.36, 1.42), v(-1.62, -0.36, 1.42), 0.17, M.lpg, 24); ch.add(lpg);
     // front wheels + fenders
     for (const s of [1, -1]) {
-      ch.add(placeWheel(wheel(g.tyreFront.radius, g.tyreFront.width), v(0, s * g.trackFront / 2, g.tyreFront.radius)));
+      const fw = placeWheel(wheel(g.tyreFront.radius, g.tyreFront.width), v(0, s * g.trackFront / 2, g.tyreFront.radius));
+      this.wheels.push({ w: fw, r: g.tyreFront.radius }); ch.add(fw);
       ch.add(pboxMinMax(-0.35, 0.3, s > 0 ? hw - 0.1 : -hw - 0.02, s > 0 ? hw + 0.02 : -hw + 0.1, 0.62, 0.7, M.paintDark, 0.02));
     }
     ch.add(pcyl(v(0, -g.trackFront / 2, g.tyreFront.radius), v(0, g.trackFront / 2, g.tyreFront.radius), 0.07, M.steel));
@@ -85,7 +89,12 @@ export class ForkliftModel {
     // --- oscillating rear axle (stays on ground) ---
     this.rearAxle.add(pcyl(v(-g.wheelbase, -g.trackRear / 2, g.tyreRear.radius), v(-g.wheelbase, g.trackRear / 2, g.tyreRear.radius), 0.06, M.steel));
     this.rearAxle.add(pboxMinMax(-g.wheelbase - 0.08, -g.wheelbase + 0.08, -0.12, 0.12, g.tyreRear.radius, g.rearAxlePivotHeight + 0.05, M.steel));
-    for (const s of [1, -1]) this.rearAxle.add(placeWheel(wheel(g.tyreRear.radius, g.tyreRear.width), v(-g.wheelbase, s * g.trackRear / 2, g.tyreRear.radius)));
+    for (const s of [1, -1]) {
+      const pivot = new THREE.Group(); pivot.position.copy(T(v(-g.wheelbase, s * g.trackRear / 2, g.tyreRear.radius)));
+      const rw = wheel(g.tyreRear.radius, g.tyreRear.width);
+      pivot.add(rw); this.rearAxle.add(pivot);
+      this.steerPivots.push(pivot); this.wheels.push({ w: rw, r: g.tyreRear.radius });
+    }
 
     // --- mast (built in the mast frame: origin at tilt pivot) ---
     const mw = g.mastWidth / 2, top = g.mastCollapsedHeight - g.mastPivot.z, bot = -g.mastPivot.z + 0.06;
@@ -157,6 +166,12 @@ export class ForkliftModel {
   setPose(f: Frame | null) {
     this.tip.matrix.copy(f ? mat3ToThree(f.R, f.t) : new THREE.Matrix4());
     this.tip.matrixWorldNeedsUpdate = true;
+  }
+
+  /** Roll the wheels by the distance travelled (m) and steer the rear wheels (rad, physics yaw). */
+  setWheels(dist: number, steer: number) {
+    for (const { w, r } of this.wheels) w.rotation.z = -dist / r;
+    for (const p of this.steerPivots) p.rotation.y = steer;
   }
 
   setGhost(on: boolean) {

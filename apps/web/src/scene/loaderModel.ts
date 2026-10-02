@@ -27,6 +27,7 @@ export class LoaderModel {
   private liftCyl: HydCylinder[] = [];
   private tiltCyl: HydCylinder;
   private tiltLink: THREE.Mesh;
+  private wheels: THREE.Group[] = [];
 
   constructor(public profile: LoaderProfile) {
     const g = profile.geometry;
@@ -76,7 +77,7 @@ export class LoaderModel {
     // --- rear axle (oscillating) ---
     this.rearAxle.add(pcyl(v(g.rearAxleX, -g.trackRear / 2, g.tyre.radius), v(g.rearAxleX, g.trackRear / 2, g.tyre.radius), 0.12 * s, M.paintDark));
     this.rearAxle.add(pboxMinMax(g.rearAxleX - 0.25 * s, g.rearAxleX + 0.25 * s, -0.25 * s, 0.25 * s, g.tyre.radius - 0.15 * s, g.rearAxlePivotHeight, M.paintDark));
-    for (const sd of [1, -1]) this.rearAxle.add(placeWheel(wheel(g.tyre.radius, g.tyre.width, { lugs: true, rimMat: M.rimLoader }), v(g.rearAxleX, sd * g.trackRear / 2, g.tyre.radius)));
+    for (const sd of [1, -1]) { const w = placeWheel(wheel(g.tyre.radius, g.tyre.width, { lugs: true, rimMat: M.rimLoader }), v(g.rearAxleX, sd * g.trackRear / 2, g.tyre.radius)); this.wheels.push(w); this.rearAxle.add(w); }
 
     // --- front frame (articulation frame) ---
     const F = this.frontFrame;
@@ -88,7 +89,8 @@ export class LoaderModel {
       F.add(pcyl(v(g.armPivot.x, y - 0.08 * s, g.armPivot.z), v(g.armPivot.x, y + 0.08 * s, g.armPivot.z), 0.07 * s, M.steel));
       const y0 = sd * (g.trackFront / 2), wy = g.tyre.width / 2 + 0.06;
       F.add(pboxMinMax(g.frontAxleX - g.tyre.radius * 0.6, g.frontAxleX + g.tyre.radius + 0.1, y0 - wy, y0 + wy, 2 * g.tyre.radius + 0.06, 2 * g.tyre.radius + 0.12, M.paintYellow, 0.03));
-      F.add(placeWheel(wheel(g.tyre.radius, g.tyre.width, { lugs: true, rimMat: M.rimLoader }), v(g.frontAxleX, sd * g.trackFront / 2, g.tyre.radius)));
+      const fw = placeWheel(wheel(g.tyre.radius, g.tyre.width, { lugs: true, rimMat: M.rimLoader }), v(g.frontAxleX, sd * g.trackFront / 2, g.tyre.radius));
+      this.wheels.push(fw); F.add(fw);
     }
     F.add(pcyl(v(g.frontAxleX, -g.trackFront / 2, g.tyre.radius), v(g.frontAxleX, g.trackFront / 2, g.tyre.radius), 0.13 * s, M.paintDark));
     // headlights on tower
@@ -133,6 +135,11 @@ export class LoaderModel {
     this.operator = new OperatorFigure(hiVisTexture());
     this.operator.position.copy(T(v(hip.x, hip.y, hip.z)));
     this.roll.add(this.operator);
+  }
+
+  /** Roll the wheels by the distance travelled (m). Articulation is set through update(). */
+  setWheels(dist: number, _steer: number) {
+    for (const w of this.wheels) w.rotation.z = -dist / this.profile.geometry.tyre.radius;
   }
 
   setHeap(material: BulkMaterial | null, volume: number, lateralShift: number) {

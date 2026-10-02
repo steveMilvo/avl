@@ -89,3 +89,6 @@ ul.events { list-style: none; padding: 0; margin: 0; font-size: 12.5px; } ul.eve
 .row { display: flex; gap: 4px; flex-wrap: wrap; margin: 4px 0; }
 @media (max-width: 1100px) { body { grid-template: "top" 56px "view" 55vh "time" 64px "left" auto "right" auto / 1fr; overflow: auto; height: auto; } #left, #right { overflow: visible; } }
 [hidden] { display: none !important; }
+#hud { position: absolute; left: 10px; top: 10px; z-index: 4; background: rgba(10, 14, 18, 0.82); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; min-width: 210px; font-variant-numeric: tabular-nums; }
+.hud-speed { font-size: 34px; font-weight: 800; line-height: 1; color: var(--accent); } .hud-speed span { font-size: 14px; color: var(--muted); margin-left: 4px; }
+.hud-row { font-size: 12.5px; color: #dfe6eb; margin-top: 3px; } .hud-row b { color: #fff; letter-spacing: 0.6px; }

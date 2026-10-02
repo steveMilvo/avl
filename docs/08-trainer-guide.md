@@ -10,9 +10,13 @@
 1. Set the load, the mast or bucket position, the terrain and any movement in the left panel.
 2. Press **Set baseline** (Trainer section) before a change. The magenta wireframe ghost marks where the
    combined CG was, and the right panel lists what changed in **Explain this change**.
-3. Press **▶ Run simulation** to see what the machine, the load and the operator do.
-4. Press **🎬 Replay tipping moment** for a slow-motion replay from the tip view camera.
-5. Use **Step** and the scrubber to stop on a frame and explain it.
+3. In **Movement**, choose *Drive, then brake*, *Pull away* or *Drive, then turn*, and set the speed,
+   braking rate or turn radius (the loader's turn radius comes from its articulation angle).
+4. Press **▶ Run simulation**. The machine drives across the yard at that speed, the camera follows it,
+   and the readout shows speed, g-forces, turn radius and the critical tipping axis live. The dashed
+   yellow line is the path it took.
+5. Press **🎬 Replay tipping moment** for a slow-motion replay from the tip view camera.
+6. Use **Step** and the scrubber to stop on a frame and explain it.
 
 ## Reading the right panel
 

@@ -3,7 +3,7 @@ import { type MassComponent } from "./mass.js";
 import { type OscillatingAxleSupport, evaluateStability, type StabilityResult } from "./stability.js";
 import { type Terrain } from "./terrain.js";
 import { type ProfileMeta, type CapacityEntry, type OperatorSeatSpec } from "./profile.js";
-import { type HullPoint, type DynamicsSetup, type OperatorBehaviour, simulateTipOver, type DynamicsResult } from "./dynamics.js";
+import { type HullPoint, type DynamicsSetup, type OperatorBehaviour, simulateTipOver, type DynamicsResult, type TipContext, type TravelSpec, buildMotion } from "./dynamics.js";
 import { checkForkLoad } from "./retention.js";
 
 /**
@@ -222,15 +222,50 @@ export interface ManoeuvreSpec {
   duration: number;
 }
 
-export const forkliftDynamics = (s: ForkliftState, opts: { behaviour: OperatorBehaviour; jumpSide?: "fall" | "high"; manoeuvre?: ManoeuvreSpec; dt?: number; tEnd?: number }): DynamicsResult => {
-  const p = s.profile, L = s.inputs.payload;
+const forkliftPayloadSetup = (p: ForkliftProfile, inputs: ForkliftInputs, geo: ForkliftGeometryState) => {
+  const L = inputs.payload;
+  if (!L) return undefined;
+  return {
+    mode: "rigid" as const, secured: L.secured, friction: L.loadFriction, angleOfRepose: 0,
+    normal: geo.forkPlaneNormal, outward: transformDir(geo.carriageFrame, v(1, 0, 0)),
+    hull: forkliftPayloadHull(inputs, geo), halfHeight: L.height / 2,
+    forkCheck: (fl: Vec3) => {
+      const r = checkForkLoad(fl, L, geo.loadCentre ?? 0, p.geometry.forkLength, p.geometry.forkSpacing);
+      return { release: r.status !== "retained", why: r.status === "toppling-predicted" ? "toppled off the forks" : "slid off the forks" };
+    },
+  };
+};
+
+export const forkliftContext = (p: ForkliftProfile, inputs: ForkliftInputs): TipContext => {
+  const st = evaluateForklift(p, inputs);
+  const payload = forkliftPayloadSetup(p, inputs, st.geometry);
+  return { stability: st.stability, hull: forkliftHull(p, inputs, st.geometry), ...(payload ? { payload } : {}), state: st };
+};
+
+/** Rear-wheel steer angle (rad) for a turn radius at the front-axle centre (m, +left). */
+export const forkliftSteerForRadius = (p: ForkliftProfile, radius: number): number => -Math.atan(p.geometry.wheelbase / radius);
+
+export interface DynamicsOptions {
+  behaviour: OperatorBehaviour; jumpSide?: "fall" | "high";
+  /** Legacy: constant acceleration for a duration, machine does not travel. */
+  manoeuvre?: ManoeuvreSpec;
+  /** Travel: the machine drives at speed, brakes, accelerates or turns, and stability is evaluated live. */
+  travel?: TravelSpec;
+  dt?: number; tEnd?: number;
+}
+
+export const forkliftDynamics = (s: ForkliftState, opts: DynamicsOptions): DynamicsResult => {
+  const p = s.profile;
   const m = opts.manoeuvre;
+  const base = { ...s.inputs, allowOutsideLimits: true };
+  delete (base as { acceleration?: Vec3 }).acceleration;
+  const tr = opts.travel;
   const setup: DynamicsSetup = {
     stability: s.stability,
     terrain: s.inputs.terrain,
     hull: forkliftHull(p, s.inputs, s.geometry),
     gyration: p.gyration,
-    ...(m ? { accel: (t: number) => (t < m.duration ? m.acceleration : v(0, 0, 0)) } : {}),
+    ...(m && !tr ? { accel: (t: number) => (t < m.duration ? m.acceleration : v(0, 0, 0)) } : {}),
     operator: {
       seat: v(p.operatorSeat.hip.x, p.operatorSeat.hip.y, p.operatorSeat.hip.z), mass: p.masses.operator.mass,
       behaviour: opts.behaviour, enclosedCab: p.operatorSeat.enclosedCab, seatFriction: p.operatorSeat.seatFriction,
@@ -239,14 +274,21 @@ export const forkliftDynamics = (s: ForkliftState, opts: { behaviour: OperatorBe
     ...(opts.dt ? { dt: opts.dt } : {}),
     ...(opts.tEnd ? { tEnd: opts.tEnd } : {}),
   };
-  if (L) setup.payload = {
-    mode: "rigid", secured: L.secured, friction: L.loadFriction, angleOfRepose: 0,
-    normal: s.geometry.forkPlaneNormal, outward: transformDir(s.geometry.carriageFrame, v(1, 0, 0)),
-    hull: forkliftPayloadHull(s.inputs, s.geometry), halfHeight: L.height / 2,
-    forkCheck: (fl) => {
-      const r = checkForkLoad(fl, L, s.geometry.loadCentre ?? 0, p.geometry.forkLength, p.geometry.forkSpacing);
-      return { release: r.status !== "retained", why: r.status === "toppling-predicted" ? "toppled off the forks" : "slid off the forks" };
-    },
-  };
+  const payload = forkliftPayloadSetup(p, s.inputs, s.geometry);
+  if (payload) setup.payload = payload;
+  if (tr) {
+    const noOperator = { ...p, masses: { ...p.masses, operator: { ...p.masses.operator, mass: 0 } } };
+    const L = p.geometry.wheelbase;
+    setup.motion = buildMotion(tr, {
+      ref: v(0, 0, 0), cg: s.stability.cgUnrolled.combined.cg,
+      steerTurn: tr.kind === "turn" ? forkliftSteerForRadius(p, tr.radius) : 0, steerConst: 0,
+      kappaOf: (d) => -Math.tan(d) / L,
+    });
+    setup.evaluate = (yaw, a, _steer, rm) => forkliftContext(rm.operator ? noOperator : p, {
+      ...base, terrain: { ...s.inputs.terrain, heading: s.inputs.terrain.heading + yaw },
+      ...(a.x !== 0 || a.y !== 0 || a.z !== 0 ? { acceleration: a } : {}),
+      ...(rm.payload ? { payload: null } : {}),
+    });
+  }
   return simulateTipOver(setup);
 };

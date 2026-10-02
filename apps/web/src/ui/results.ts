@@ -99,6 +99,7 @@ export const renderResults = (root: HTMLElement, e: Evaluation, extra: { explain
 
 export const OUTCOME: Record<DynamicsResult["machineOutcome"], [string, string]> = {
   stable: ["Stayed on its wheels", "ok"],
+  slid: ["Tyres lost grip: machine slid", "warn"],
   "rocked-back": ["Lifted, then dropped back", "warn"],
   "rests-on-attachment": ["Tipped onto its attachment", "bad"],
   leaning: ["Tipped over", "bad"],

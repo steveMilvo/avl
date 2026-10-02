@@ -64,7 +64,11 @@ export class Overlays {
    * Draw a static evaluation, optionally rotated about a hinge (during tip playback).
    * `tip` rotates every machine-fixed point; gravity stays world-vertical.
    */
-  update(st: StabilityResult, opts: { pose?: Frame; moving?: boolean; payloadReleased?: boolean; recordTrail?: boolean; showResultant?: boolean } = {}) {
+  /**
+   * `pose` maps body points to the site (stage) frame: travel position, plus tip rotation while tipping.
+   * `gravitySite` / `resultantSite` are directions in the site frame (gravity stays world-vertical).
+   */
+  update(st: StabilityResult, opts: { pose?: Frame; moving?: boolean; payloadReleased?: boolean; recordTrail?: boolean; showResultant?: boolean; gravitySite?: Vec3; resultantSite?: Vec3 } = {}) {
     const tf = (p: Vec3) => (opts.pose ? transformPoint(opts.pose, p) : p);
     const tg = this.toggles;
     const cgM = tf(st.cg.machine.cg), cgP = tf(st.cg.payload.cg);
@@ -79,7 +83,7 @@ export class Overlays {
     this.labels.combined.el.textContent = `Combined CG · h ${cgC.z.toFixed(2)} m`;
 
     // gravity line: world-vertical, from the combined CG to the ground plane (z = 0 of the ground frame)
-    const g = st.gravityDir;
+    const g = opts.gravitySite ?? st.gravityDir;
     const toGround = (p: Vec3, d: Vec3) => (d.z < -1e-9 ? add(p, scale(d, -p.z / d.z)) : p);
     const hit = toGround(cgC, g);
     this.setLine(this.gravityLine, [cgC, hit]);
@@ -94,7 +98,7 @@ export class Overlays {
     const showRes = (opts.showResultant ?? st.quasiStatic) && tg.gravity;
     this.resultantLine.visible = this.resultantHit.visible = showRes;
     if (showRes) {
-      const rh = toGround(cgC, st.resultantDir);
+      const rh = toGround(cgC, opts.resultantSite ?? st.resultantDir);
       this.setLine(this.resultantLine, [cgC, rh]);
       this.resultantHit.position.copy(T(rh)).add(new THREE.Vector3(0, 0.006, 0));
     }
@@ -102,7 +106,7 @@ export class Overlays {
     // support polygon + critical axis
     const ev = st.resultantEval, pts = ev.polygon.points.map((p) => tf(p.p));
     this.setLine(this.poly as unknown as THREE.Line, pts);
-    const flat = pts.map((p) => ({ ...p, z: (opts.pose ? p.z : 0) + 0.004 }));
+    const flat = pts.map((p) => ({ ...p, z: (opts.moving ? p.z : 0) + 0.004 }));
     const idx: number[] = []; for (let i = 1; i < flat.length - 1; i++) idx.push(0, i, i + 1);
     this.polyFill.geometry.dispose();
     this.polyFill.geometry = new THREE.BufferGeometry().setFromPoints(flat.map(T)); this.polyFill.geometry.setIndex(idx);
@@ -119,20 +123,20 @@ export class Overlays {
 
     // reactions
     this.arrows.clear(); for (const l of this.reactionLabels) l.removeFromParent(); this.reactionLabels = [];
-    if (tg.reactions && st.reactions && !opts.pose) {
+    if (tg.reactions && st.reactions && !opts.moving) {
       const supports = new Map<string, Vec3>(); for (const p of ev.polygon.points) supports.set(p.id, p.p);
       for (const r of st.reactions as TyreReaction[]) {
         const p = supports.get(r.id) ?? (st.liftedContact?.id === r.id ? st.liftedContact.p : undefined);
         if (!p) continue;
         const kN = r.normal / 1000, len = Math.max(0.05, Math.min(2.2, kN / 30));
         const col = r.lifted || kN < 0 ? 0xff3b30 : kN < 2 ? 0xffb020 : 0xffffff;
-        const arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), T(p), len, col, 0.12, 0.08);
+        const arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), T(tf(p)), len, col, 0.12, 0.08);
         arrow.traverse((o) => { const m = (o as THREE.Mesh).material as THREE.Material | undefined; if (m) onTop(m); o.renderOrder = 1001; });
         this.arrows.add(arrow);
         const lb = label("lb-react");
         lb.el.textContent = r.lifted ? `${r.label}: 0 kN (lifted)` : kN < 0 ? `${r.label}: lifting` : `${kN.toFixed(1)} kN`;
         if (r.lifted || kN < 0) lb.el.classList.add("lifted");
-        lb.obj.position.copy(T(p)).add(new THREE.Vector3(0, len + 0.05, 0)); lb.obj.visible = tg.labels;
+        lb.obj.position.copy(T(tf(p))).add(new THREE.Vector3(0, len + 0.05, 0)); lb.obj.visible = tg.labels;
         this.arrows.add(lb.obj); this.reactionLabels.push(lb.obj);
       }
     }

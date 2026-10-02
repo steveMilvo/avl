@@ -1,11 +1,11 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-import { explainChange, type DynamicsResult, type ChangeExplanation, cross, normalize, scale, add, v, type Vec3 } from "@loadlab/physics";
+import { explainChange, type DynamicsResult, type ChangeExplanation, cross, normalize, scale, add, v, type Vec3, transformPoint, apply } from "@loadlab/physics";
 import { MachineView } from "./scene/machineView.js";
 import { T } from "./scene/coords.js";
 import {
-  FORKLIFTS, LOADERS, defaultForklift, defaultLoader, evaluate, runDynamics, clone, forkPreset, DENSITY, REPOSE, presetLabel,
+  FORKLIFTS, LOADERS, defaultForklift, defaultLoader, evaluate, runDynamics, clone, forkPreset, DENSITY, REPOSE, presetLabel, turnRadius,
   type MachineUI, type Evaluation, type ForkliftUI, type LoaderUI,
 } from "./app/state.js";
 import { LESSONS, type Lesson } from "./app/lessons.js";
@@ -56,6 +56,14 @@ const MACHINES: [string, string][] = [
   ...Object.values(LOADERS).map((p) => [`loader|${p.meta.id}`, `Front end loader — ${shortName(p)}`] as [string, string]),
 ];
 
+const radiusHint = () => {
+  if (ui.kind !== "loader") return "";
+  const R = turnRadius(ui);
+  return R === undefined
+    ? "Set an articulation angle in Loader controls: the articulation sets the turn. Straight articulation drives straight."
+    : `Articulation ${Math.abs(ui.articulationDeg).toFixed(0)}° ${ui.articulationDeg > 0 ? "left" : "right"} gives a ${Math.abs(R).toFixed(1)} m path radius at the rear axle. The loader starts straight and steers into it.`;
+};
+
 // ---------- evaluation ----------
 const recompute = (recordTrail = true) => {
   try { evalB = evaluate(ui); errorMsg = null; }
@@ -78,6 +86,7 @@ const recompute = (recordTrail = true) => {
   }
   const pickSel = document.querySelector("#machine-pick select") as HTMLSelectElement | null;
   if (pickSel) pickSel.value = `${ui.kind}|${ui.profileId}`;
+  const rh = document.getElementById("radius-hint"); if (rh) rh.textContent = radiusHint();
   hideBanner();
   refreshRight();
   refreshControls();
@@ -166,16 +175,24 @@ const buildControls = () => {
 
   const Mv = section("Movement");
   const m = ui.manoeuvre;
-  add(Mv.body, select<typeof m.type>({ key: "mtype", label: "Manoeuvre", options: [["none", "Stationary"], ["brake", "Braking"], ["accelerate", "Accelerating"], ["turn", "Turning"]], get: () => m.type, set: (k) => (m.type = k), onChange: () => { buildControls(); on(); } }));
+  add(Mv.body, select<typeof m.type>({ key: "mtype", label: "Manoeuvre", options: [["none", "Parked"], ["brake", "Drive, then brake"], ["accelerate", "Pull away"], ["turn", "Drive, then turn"]], get: () => m.type, set: (k) => (m.type = k), onChange: () => { buildControls(); on(); } }));
   if (m.type !== "none") {
     add(Mv.body, select<typeof m.travel>({ key: "travel", label: "Travel direction (independent of heading)", options: [["forward", "Forward"], ["reverse", "Reverse"]], get: () => m.travel, set: (k) => (m.travel = k), onChange: on }));
+    add(Mv.body, slider({ key: "spd", label: m.type === "accelerate" ? "Speed reached" : "Travel speed", unit: "km/h", min: 1, max: 30, step: 0.5, get: () => m.speedKmh, set: (x) => (m.speedKmh = x), onChange: on }));
+    if (m.type === "brake" || m.type === "accelerate")
+      add(Mv.body, slider({ key: "acc", label: m.type === "brake" ? "Braking deceleration" : "Acceleration", unit: "m/s²", min: 0.2, max: 7, step: 0.1, get: () => m.accel, set: (x) => (m.accel = x), onChange: on, hint: m.type === "brake" ? "Gentle stop ≈ 1 · firm ≈ 2.5 · emergency stop on dry concrete ≈ 4–5 (indicative)." : undefined }));
     if (m.type === "turn") {
-      add(Mv.body, slider({ key: "spd", label: "Speed", unit: "km/h", min: 1, max: 25, step: 0.5, get: () => m.speedKmh, set: (x) => (m.speedKmh = x), onChange: on }));
-      add(Mv.body, slider({ key: "rad", label: "Turn radius", unit: "m", min: 2, max: 30, step: 0.5, get: () => m.radius, set: (x) => (m.radius = x), onChange: on }));
-      add(Mv.body, select<typeof m.turn>({ key: "tdir", label: "Turn direction", options: [["left", "Left"], ["right", "Right"]], get: () => m.turn, set: (k) => (m.turn = k), onChange: on }));
-    } else add(Mv.body, slider({ key: "acc", label: m.type === "brake" ? "Deceleration" : "Acceleration", unit: "m/s²", min: 0.2, max: 7, step: 0.1, get: () => m.accel, set: (x) => (m.accel = x), onChange: on }));
-    add(Mv.body, slider({ key: "dur", label: "Duration", unit: "s", min: 0.1, max: 4, step: 0.05, get: () => m.duration, set: (x) => (m.duration = x), onChange: on }));
-    Mv.body.append(h("div", { class: "hint" }, "The static view shows the quasi-static resultant (cyan) at peak acceleration. Run the simulation for the transient."));
+      if (ui.kind === "forklift") {
+        add(Mv.body, slider({ key: "rad", label: "Turn radius (front-axle centre)", unit: "m", min: 1.5, max: 30, step: 0.5, get: () => m.radius, set: (x) => (m.radius = x), onChange: on }));
+        add(Mv.body, select<typeof m.turn>({ key: "tdir", label: "Turn direction", options: [["left", "Left"], ["right", "Right"]], get: () => m.turn, set: (k) => (m.turn = k), onChange: on }));
+      } else {
+        Mv.body.append(h("div", { class: "hint", id: "radius-hint" }, radiusHint()));
+      }
+      add(Mv.body, slider({ key: "dur", label: "Time in the turn", unit: "s", min: 0.5, max: 8, step: 0.25, get: () => m.duration, set: (x) => (m.duration = x), onChange: on }));
+    }
+    if (ui.kind === "loader" && m.type !== "turn" && Math.abs(ui.articulationDeg) > 0.5)
+      Mv.body.append(h("div", { class: "hint" }, "The loader is articulated, so it travels on a curve."));
+    Mv.body.append(h("div", { class: "hint" }, "Run the simulation to watch the machine drive. The static view shows the peak quasi-static resultant (cyan)."));
   }
   left.append(Mv.el);
 
@@ -287,14 +304,20 @@ const runSim = () => {
   play.tEnd = Math.max(dynB.frames.at(-1)!.t, dynA?.frames.at(-1)?.t ?? 0);
   play.t = 0; play.speed = Number(speedSel.value); play.playing = true; play.lastStrikeShake = -1;
   scrub.max = String(play.tEnd);
-  showBanner(dynB);
+  hideBanner(); bannerShown = false;
+  applyTime(); follow = groundToWorld(viewB.sitePosition());
   refreshRight();
 };
-const stopPlayback = () => { play.playing = false; play.t = 0; play.tEnd = 0; scrub.value = "0"; viewB.clearDynamics(); viewA?.clearDynamics(); };
+let bannerShown = false;
+/** Camera follows the machine while it drives. */
+let follow: THREE.Vector3 | null = null;
+const stopPlayback = () => { play.playing = false; play.t = 0; play.tEnd = 0; scrub.value = "0"; follow = null; hud.hidden = true; viewB.clearDynamics(); viewA?.clearDynamics(); };
 const replaySlow = () => {
   if (!dynB) runSim(); if (!dynB) return;
-  const start = dynB.events.find((e) => e.type === "tip-start")?.t ?? 0;
-  play.t = Math.max(0, start - 0.3); play.speed = 0.15; speedSel.value = "0.15"; play.playing = true; play.lastStrikeShake = -1;
+  const key = dynB.events.find((e) => e.type === "tip-start" || e.type === "skid" || e.type === "payload-released");
+  const start = key?.t ?? 0;
+  play.t = Math.max(0, start - 1.0); play.speed = 0.15; speedSel.value = "0.15"; play.playing = true; play.lastStrikeShake = -1;
+  applyTime();
   setCamera("cinematic");
 };
 
@@ -319,15 +342,19 @@ const setCamera = (k: string) => {
   document.querySelectorAll("#cams button").forEach((b) => b.classList.toggle("on", (b as HTMLElement).dataset["k"] === k));
   controls.enabled = k !== "operator";
   if (k === "operator") return;
-  const c = groundToWorld(machineCentre()), s = machineSize();
+  const fr = viewB.current;
+  const toSite = (p: Vec3) => (fr ? transformPoint(fr.travel, p) : p);
+  const dirSite = (d: Vec3) => (fr ? apply(fr.travel.R, d) : d);
+  const c = groundToWorld(toSite(machineCentre())), s = machineSize();
   const dirs: Record<string, Vec3> = { iso: v(0.75, 0.85, 0.45), side: v(0, 1, 0.12), front: v(1, 0, 0.15), rear: v(-1, 0, 0.18), overhead: v(0.001, 0, 1) };
   let d = dirs[k];
   if (k === "cinematic") {
     if (dynB) { const ax = dynB.hinge.axis, out = cross(ax, v(0, 0, 1)); d = normalize(add(scale(ax, 0.9), add(scale(out, -0.35), v(0, 0, 0.25)))); }
     else d = dirs["side"];
   }
-  const w = dirToWorld(normalize(d!)).multiplyScalar(k === "overhead" ? s * 1.3 : s);
+  const w = dirToWorld(dirSite(normalize(d!))).multiplyScalar(k === "overhead" ? s * 1.3 : s);
   camera.position.copy(c).add(w); controls.target.copy(c); camera.up.set(0, 1, 0); controls.update();
+  if (dynB) follow = groundToWorld(viewB.sitePosition());
 };
 const updateOperatorCam = () => {
   const m = viewB.model; if (!m) return;
@@ -373,6 +400,7 @@ const buildHeader = () => {
 
 // ---------- timeline ----------
 const tl = document.getElementById("timeline")!;
+const hud = document.getElementById("hud")!;
 const bRun = h("button", { class: "primary" }, "▶ Run simulation"); bRun.onclick = runSim;
 const bPlay = h("button", {}, "⏯ Play / pause"); bPlay.onclick = () => { if (!dynB) return runSim(); if (play.t >= play.tEnd) play.t = 0; play.playing = !play.playing; };
 const bStep = h("button", {}, "⏭ Step"); bStep.onclick = () => { if (!dynB) return; play.playing = false; play.t = Math.min(play.tEnd, play.t + 1 / 60); applyTime(); };
@@ -391,6 +419,21 @@ const applyTime = () => {
   viewB.setTime(play.t); viewA?.setTime(play.t);
   scrub.value = String(play.t);
   tlabel.textContent = `t = ${play.t.toFixed(2)} s · ${play.speed}×`;
+  const f = viewB.current;
+  if (f && dynB) {
+    hud.hidden = false;
+    const m = f.motion, gx = f.accel.x / 9.81, gy = f.accel.y / 9.81;
+    const rest = dynB.events.find((e) => e.type === "came-to-rest");
+    const down = !!rest && play.t >= rest.t;
+    const state = down ? (m.speed > 0.05 ? "SLIDING ON ITS SIDE" : "AT REST, TIPPED OVER") : !f.onWheels ? "TIPPING" : m.mode === "skid" ? "SKIDDING" : m.mode === "sliding" ? "SLIDING" : m.speed > 0.05 ? "DRIVING" : "STOPPED";
+    hud.innerHTML = `<div class="hud-speed">${(m.speed * 3.6).toFixed(1)}<span>km/h</span></div>`
+      + `<div class="hud-row"><b>${state}</b></div>`
+      + `<div class="hud-row">Longitudinal ${f.accel.x >= 0 ? "+" : "−"}${Math.abs(gx).toFixed(2)} g</div>`
+      + `<div class="hud-row">Lateral ${Math.abs(gy).toFixed(2)} g ${gy > 0.005 ? "(load pushed right)" : gy < -0.005 ? "(load pushed left)" : ""}</div>`
+      + `<div class="hud-row">Turn radius ${Number.isFinite(m.radius) ? `${m.radius.toFixed(1)} m` : "straight"}</div>`
+      + `<div class="hud-row">Critical axis ${f.stability.resultantEval.critical.id} · ${f.onWheels ? `${(f.stability.resultantEval.critical.margin * 1000).toFixed(0)} mm` : "outside"}</div>`;
+  }
+  if (dynB && !bannerShown && play.t >= Math.min(play.tEnd - 1e-6, (dynB.events.find((e) => e.type === "tip-start")?.t ?? play.tEnd) + 0.5)) { showBanner(dynB); bannerShown = true; }
   if (dynB?.strike && play.t >= dynB.strike.t && play.lastStrikeShake < dynB.strike.t) { shake = Math.min(0.25, 0.03 * dynB.strike.speed + 0.03); play.lastStrikeShake = dynB.strike.t; }
 };
 
@@ -420,6 +463,10 @@ let last = performance.now();
 const loop = (now: number) => {
   const dt = Math.min(0.1, (now - last) / 1000); last = now;
   if (play.playing && dynB) { play.t = Math.min(play.tEnd, play.t + dt * play.speed); applyTime(); if (play.t >= play.tEnd) play.playing = false; }
+  if (follow && dynB && camMode !== "operator") {
+    const p = groundToWorld(viewB.sitePosition()), dlt = p.clone().sub(follow);
+    camera.position.add(dlt); controls.target.add(dlt); follow = p;
+  }
   if (camMode === "operator") updateOperatorCam(); else controls.update();
   if (shake > 0.001) { const o = new THREE.Vector3((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake); camera.position.add(o); renderFrame(); camera.position.sub(o); shake *= 0.9; }
   else renderFrame();

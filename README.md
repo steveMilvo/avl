@@ -19,7 +19,7 @@ slow-motion replay. No outcome is scripted; everything comes from the tested phy
 ```bash
 pnpm install
 pnpm dev            # opens the app at http://localhost:5173
-pnpm test           # 62 physics benchmark and regression tests
+pnpm test           # 73 physics benchmark and regression tests
 pnpm build:single   # apps/web/dist-single/index.html — one file, double-click to open offline
 ```
 
@@ -34,7 +34,7 @@ Recommended: Chrome or Edge on a laptop with a dedicated graphics card.
 | Modes | Explore · Guided lessons (18 scenarios: predict → run → inspect → explain) · Trainer comparison (A/B side by side, lockable variables) |
 | Teaching overlays | Blue machine CG · orange payload CG · magenta combined CG · world-vertical gravity line · cyan inertial resultant · support outline · tipping axis with margin · tyre reactions · CG trail · baseline ghost |
 | Results | Four separate verdicts: calculated stability · manufacturer capacity · operating restrictions · data confidence. No "SAFE" badge. "Operating limit not verified" when data is missing |
-| Dynamics | Multi-stage rigid-body tip-over, load sliding/toppling off forks, bucket spill, operator seatbelt / no belt / jump, crush and entrapment zone, dust on impact. No blood or injury depiction |
+| Dynamics | Machines drive at the set speed, brake, pull away or turn on the set radius, with stability evaluated live; multi-stage rigid-body tip-over, load sliding/toppling off forks, bucket spill, operator seatbelt / no belt / jump, crush and entrapment zone, dust on impact. No blood or injury depiction |
 | Playback | Run · pause · step · scrub · 1× to 0.05× · slow-motion replay of the tipping moment · cameras: orbit, side, front, rear, overhead, operator, tip view |
 | Outputs | Engineering view · screenshot · HTML report · scenario export/import · saved presets |
 
