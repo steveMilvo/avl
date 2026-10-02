@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FEL Refresher VOC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a controlled WHSM assessment record. Sticky part rail on the left (Parts A–E, each with a live
+   status chip), the record itself on the right. Plant-yellow is used only for the active part and the
+   critical-item marker, the way hazard yellow is used on the machine. */
+:root {
+  --bg: #eef0ec;
+  --surface: #ffffff;
+  --sunk: #e4e7e1;
+  --ink: #1c2321;
+  --muted: #5b6662;
+  --line: #cdd3cc;
+  --accent: #f2b705;
+  --accent-ink: #7a5a00;
+  --on-accent: #1c2321;
+  --ok: #1f7a4a;
+  --ok-bg: #dff1e6;
+  --bad: #b3261e;
+  --bad-bg: #fbe3e0;
+  --warn-bg: #fff3c9;
+  --focus: #1d5fbf;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141917; --surface: #1c2220; --sunk: #232a27; --ink: #e6ebe7; --muted: #9aa6a1; --line: #34403b;
+    --accent: #f2b705; --accent-ink: #f6cd4c; --on-accent: #1c2321;
+    --ok: #6fd39b; --ok-bg: #173327; --bad: #ff8a80; --bad-bg: #3a1c1a; --warn-bg: #3a3214; --focus: #7fb0ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141917; --surface: #1c2220; --sunk: #232a27; --ink: #e6ebe7; --muted: #9aa6a1; --line: #34403b;
+  --accent: #f2b705; --accent-ink: #f6cd4c; --on-accent: #1c2321;
+  --ok: #6fd39b; --ok-bg: #173327; --bad: #ff8a80; --bad-bg: #3a1c1a; --warn-bg: #3a3214; --focus: #7fb0ff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--f-body); }
+a { color: var(--ink); text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 700; line-height: 1.1; text-wrap: balance; margin: 0; letter-spacing: .01em; }
+h1 { font-size: clamp(2rem, 5vw, 2.8rem); }
+h2 { font-size: 1.75rem; }
+h3 { font-size: 1.2rem; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 .72rem/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 64px; }
+header.doc { display: grid; gap: 14px; padding-block: 8px 24px; border-bottom: 3px solid var(--ink); }
+.docmeta { display: flex; flex-wrap: wrap; gap: 6px 22px; font: .8rem/1.4 var(--f-mono); color: var(--muted); }
+.docmeta b { color: var(--ink); font-weight: 500; }
+.hazard { height: 8px; background: repeating-linear-gradient(-45deg, var(--accent) 0 12px, var(--ink) 12px 24px); border-radius: 2px; }
+
+.layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 32px; margin-top: 28px; }
+nav.rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); align-self: start; display: grid; gap: 4px; }
+nav.rail a { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 8px; padding: 9px 10px; border-radius: var(--r); text-decoration: none; color: var(--ink); }
+nav.rail a:hover { background: var(--sunk); }
+nav.rail .k { font: 700 1.15rem/1 var(--f-display); width: 28px; height: 28px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 4px; }
+nav.rail .t { font-size: .88rem; line-height: 1.25; }
+nav.rail a.cur .k { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.outcome-mini { margin-top: 14px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); display: grid; gap: 6px; }
+
+.chip { font: 500 .68rem/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; padding: 4px 7px; border-radius: 999px; white-space: nowrap; background: var(--sunk); color: var(--muted); }
+.chip.ok { background: var(--ok-bg); color: var(--ok); }
+.chip.bad { background: var(--bad-bg); color: var(--bad); }
+.chip.pend { background: var(--warn-bg); color: var(--accent-ink); }
+
+main { display: grid; gap: 40px; min-width: 0; }
+section.part { display: grid; gap: 18px; scroll-margin-top: 16px; }
+.part-head { display: grid; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.part-head .row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; justify-content: space-between; }
+.part-head .letter { font: 700 1rem/1 var(--f-display); color: var(--accent-ink); letter-spacing: .08em; }
+.lead { color: var(--muted); }
+.rule { font-size: .88rem; padding: 10px 14px; background: var(--sunk); border-radius: var(--r); max-width: none; }
+.rule b { font-weight: 600; }
+
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 340px); gap: 22px; align-items: start; }
+
+/* checklist rows */
+.items { display: grid; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; padding: 14px 16px; border-top: 1px solid var(--line); align-items: start; }
+.item:first-child { border-top: 0; }
+.item .q { display: grid; gap: 4px; min-width: 0; }
+.item .q strong { font-weight: 600; }
+.item .q .ev { font-size: .85rem; color: var(--muted); }
+.crit { display: inline-block; font: 600 .62rem/1 var(--f-mono); letter-spacing: .08em; padding: 3px 5px; margin-right: 6px; background: var(--accent); color: var(--on-accent); border-radius: 3px; vertical-align: 2px; }
+details.model { font-size: .85rem; }
+details.model summary { cursor: pointer; color: var(--accent-ink); font-weight: 500; }
+details.model div { margin-top: 6px; padding: 10px 12px; background: var(--sunk); border-radius: var(--r); }
+details.model ul { margin: 0; padding-left: 18px; }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { font: 500 .78rem/1 var(--f-mono); padding: 8px 10px; cursor: pointer; border-left: 1px solid var(--line); color: var(--muted); user-select: none; }
+.seg label:first-of-type { border-left: 0; }
+.seg input:focus-visible + label { outline: 2px solid var(--focus); outline-offset: -2px; }
+.seg input[value="C"]:checked + label { background: var(--ok); color: var(--surface); }
+.seg input[value="NYC"]:checked + label { background: var(--bad); color: var(--surface); }
+.seg input[value="NA"]:checked + label { background: var(--muted); color: var(--surface); }
+.item.is-nyc { background: var(--bad-bg); }
+
+/* video */
+.side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-width: 0; }
+.video { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
+.vframe { position: relative; aspect-ratio: 16 / 9; max-width: 100%; border-radius: var(--r); overflow: hidden; background: var(--ink); }
+.vframe iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.vplay { position: absolute; inset: 0; width: 100%; border: 0; cursor: pointer; color: var(--bg); text-align: left; padding: 16px;
+  background: repeating-linear-gradient(-45deg, transparent 0 18px, rgba(242,183,5,.08) 18px 36px), var(--ink);
+  display: grid; align-content: space-between; font: inherit; }
+.vplay .tri { width: 58px; height: 58px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; justify-self: center; }
+.vplay .tri::after { content: ""; border-left: 18px solid var(--on-accent); border-top: 11px solid transparent; border-bottom: 11px solid transparent; margin-left: 5px; }
+.vplay .vt { font: 600 1.05rem/1.2 var(--f-display); letter-spacing: .02em; }
+.vplay .vs { font: .72rem/1.3 var(--f-mono); opacity: .75; }
+.vplay:hover .tri { transform: scale(1.06); }
+.vmeta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .8rem; color: var(--muted); }
+.vslot { aspect-ratio: 16 / 9; max-width: 100%; border: 2px dashed var(--line); border-radius: var(--r); display: grid; place-content: center; gap: 6px; text-align: center; padding: 16px; color: var(--muted); font-size: .85rem; }
+.vslot b { color: var(--ink); font-family: var(--f-display); font-size: 1.05rem; letter-spacing: .02em; }
+.sim { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); font-size: .85rem; display: grid; gap: 6px; }
+.sim ul { margin: 0; padding-left: 18px; }
+
+/* forms */
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 16px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label { font: 500 .72rem/1.2 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+input[type="text"], input[type="date"], input[type="number"], select, textarea {
+  font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 8px 10px; width: 100%; min-width: 0; }
+textarea { min-height: 84px; resize: vertical; }
+.example-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: .85rem; padding: 10px 14px; background: var(--warn-bg); border-radius: var(--r); }
+
+button.btn { font: 600 .9rem/1 var(--f-body); padding: 10px 14px; border-radius: var(--r); border: 1px solid var(--ink); background: var(--surface); color: var(--ink); cursor: pointer; }
+button.btn.primary { background: var(--ink); color: var(--bg); }
+button.btn:hover { filter: brightness(.95); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* outcome */
+.verdict { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 20px; border-radius: var(--r); border: 2px solid var(--line); background: var(--surface); }
+.verdict .big { font: 700 2rem/1 var(--f-display); letter-spacing: .02em; }
+.verdict.ok { border-color: var(--ok); }
+.verdict.ok .big { color: var(--ok); }
+.verdict.bad { border-color: var(--bad); }
+.verdict.bad .big { color: var(--bad); }
+.tally { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tally div { padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); display: grid; gap: 2px; }
+.tally .n { font: 500 1.25rem/1.1 var(--f-mono); font-variant-numeric: tabular-nums; }
+.tally .l { font-size: .78rem; color: var(--muted); }
+.dates { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+th, td { text-align: left; padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+thead th { border-top: 0; font: 500 .72rem/1.2 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--sunk); }
+ol.refs { font-size: .82rem; color: var(--muted); padding-left: 20px; display: grid; gap: 4px; margin: 0; }
+pre#record { white-space: pre-wrap; font: .78rem/1.5 var(--f-mono); background: var(--sunk); padding: 14px; border-radius: var(--r); max-height: 320px; overflow: auto; margin: 0; }
+.toast { font-size: .85rem; color: var(--ok); }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  nav.rail { position: static; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .split { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .item { grid-template-columns: minmax(0, 1fr); }
+  .verdict { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .vplay .tri { transition: transform .15s ease; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <div class="hazard" aria-hidden="true"></div>
+  <span class="eyebrow">WHSM · Mobile plant · Verification of competency</span>
+  <h1>Front End Loader Refresher VOC</h1>
+  <p class="lead">An assessment of an experienced operator's current skill on a wheeled front end loader. It is not initial
+    training. The candidate brings evidence of prior training and experience; the assessor verifies theory, checks and an
+    uninterrupted practical drive, then records the outcome and the next due date.</p>
+  <div class="docmeta">
+    <span>Doc <b>WHSM-PLT-VOC-FEL</b></span>
+    <span>Revision <b>1.0</b></span>
+    <span>Issued <b>02 Oct 2026</b></span>
+    <span>Review <b>Oct 2027</b> or after any FEL incident</span>
+    <span>Re-verification cycle <b>24 months</b></span>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="rail" id="rail" aria-label="Assessment parts"></nav>
+
+  <main id="main">
+    <section class="part" id="setup">
+      <div class="part-head">
+        <span class="letter">Record</span>
+        <h2>Candidate, machine and site</h2>
+        <p class="lead">Identify the operator, the exact machine and attachments verified, and the site conditions. The VOC is valid only for the machine class and attachments listed here.</p>
+      </div>
+      <div class="example-note" id="exampleNote">
+        <span>The fields below hold an <b>example record</b> so you can see the form filled in. Clear it before a real assessment.</span>
+        <button class="btn" type="button" id="clearBtn">Clear example and start a new record</button>
+      </div>
+      <div class="fields" id="fields"></div>
+    </section>
+  </main>
+</div>
+
+</div>
+
+<script>
+// ---------------------------------------------------------------------------------------------
+// Video library. Every video is referenced by key from the parts below. To add or replace a video,
+// set `id` to the 11-character YouTube ID and `start` to the start time in seconds. Leave `id` empty to
+// show an "awaiting approval" slot until the WHSM owner approves a video for that topic.
+// Only videos reviewed by the WHSM owner should be added: check the content matches this site's
+// procedures and Victorian requirements before use.
+// ---------------------------------------------------------------------------------------------
+const VIDEOS = {
+  felSafety: { id: "XfHU8jhqpVM", start: 9, title: "Front end loader safe operation",
+    note: "Reference video supplied with the VOC brief. Covers stability, pre-start checks, safety features and isolation." },
+  preStart:   { id: "", title: "Pre-start walk-around: wheel loader", note: "Use the manufacturer's walk-around video for the site's machine (e.g. Cat 950-series daily walk-around)." },
+  traffic:    { id: "", title: "Separating people and mobile plant", note: "Use a WorkSafe-published traffic management film. WorkSafe Queensland's \"Working in and around mobile plant\" is a suitable candidate." },
+  attachments:{ id: "", title: "Changing loader attachments with a quick hitch", note: "Use the quick hitch manufacturer's video for the coupler fitted to the site's machine." },
+  suspended:  { id: "", title: "Lifting suspended loads with mobile plant", note: "Use material consistent with WorkSafe Victoria's guidance on plant used to lift and suspend loads." },
+};
+const yt = (v) => `https://www.youtube.com/watch?v=${v.id}${v.start ? `&t=${v.start}s` : ""}`;
+const embed = (v) => `https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0${v.start ? `&start=${v.start}` : ""}`;
+const searchUrl = (t) => `https://www.youtube.com/results?search_query=${encodeURIComponent(t)}`;
+const LOADLAB = "LoadLab (this repository, apps/web) → Guided lessons";
+
+// ---------------------------------------------------------------------------------------------
+// Framework content. `crit: true` marks a critical item: any NYC on a critical item makes the whole
+// VOC Not Yet Competent, regardless of the other results.
+// ---------------------------------------------------------------------------------------------
+const PARTS = [
+  {
+    key: "A", id: "evidence", title: "Prerequisite evidence",
+    lead: "A refresher VOC confirms existing competence. Before any theory or practical assessment, sight and record the candidate's prior training and experience. If either critical item is missing, stop: the candidate needs a full training course, not a VOC.",
+    rule: "<b>Gate.</b> Parts B–D are assessed only when every critical item in Part A is C. Keep copies in the candidate's training file.",
+    videos: [],
+    items: [
+      { id: "A1", crit: true, q: "Statement of Attainment for front end loader operations sighted",
+        ev: "Nationally recognised unit for wheeled front end loader operations (for example RIIMPO320, any release, or a superseded equivalent). Record RTO, unit code and issue date. Verify with the RTO or the candidate's USI transcript if the document looks altered." },
+      { id: "A2", crit: true, q: "Documented operating experience on a wheeled front end loader",
+        ev: "Logbook, employer letter or position description showing recent use. Record machine classes and approximate hours in the last 24 months." },
+      { id: "A3", q: "Previous VOC on file and its date",
+        ev: "Record the date of the last VOC. Note if it is more than 24 months old, or if the candidate has not operated for more than 6 months." },
+      { id: "A4", crit: true, q: "Site induction and fitness-for-work declaration complete",
+        ev: "Current site induction. Candidate declares fitness for work (fatigue, medication, alcohol and drugs) under the site policy." },
+      { id: "A5", q: "Licence for public-road movement, if the task requires it",
+        ev: "A current driver licence of the right class if the loader is driven on a public road. Mark N/A if road travel is not part of the role." },
+    ],
+  },
+  {
+    key: "B", id: "theory", title: "Theory and hazard knowledge",
+    lead: "Ask each question verbally or in writing. Accept answers in the candidate's own words that contain the key points. The assessor may rephrase a question once. Record any point the candidate missed.",
+    rule: "<b>Standard.</b> All questions must be answered to the key points. Questions B1–B3, B5 and B8 are critical.",
+    videos: ["felSafety"],
+    sim: { label: "Demonstrate with LoadLab before or after questioning", lessons: [
+      "11 · Low, intermediate and raised bucket (CG height on a cross slope)",
+      "10 · Straight versus full articulation",
+      "12 · Full articulation on longitudinal versus cross slope",
+      "13 · Uneven bucket filling",
+      "16 · Turning with a raised bucket" ] },
+    items: [
+      { id: "B1", crit: true, q: "What happens to the loader's stability when the bucket is raised?",
+        model: ["The combined centre of gravity rises and moves forward as the arms lift.", "The machine tips more easily forward and sideways, especially on a slope or in a turn.", "Braking or turning forces act at the CG height, so a raised bucket magnifies them."] },
+      { id: "B2", crit: true, q: "How must you carry a load when travelling, and why?",
+        model: ["Bucket low, in carry position, roughly 300–400 mm off the ground, rolled back.", "Keeps the CG low and the operator's view of the path clear.", "Raise only at the dump point, with the machine stopped and straight."] },
+      { id: "B3", crit: true, q: "Why is an articulated loader less stable when turned at full lock?",
+        model: ["Articulation swings the front frame, bucket and load to one side.", "The support area narrows on that side, so the side-tipping margin falls.", "Avoid full-lock turns with a raised or heavy load and on any slope."] },
+      { id: "B4", q: "Describe this site's traffic management plan as it applies to the loader.",
+        model: ["Loader routes, one-way sections and speed limit (site limit, typically 8 km/h or less).", "Pedestrian walkways, crossing points and exclusion zones around the working loader.", "Spotter or traffic controller requirements and where trucks are loaded."] },
+      { id: "B5", crit: true, q: "Where are the loader's blind spots, and what must you do if a person enters your exclusion zone?",
+        model: ["Close to the rear and rear quarters, beside the articulation joint, and in front of a raised bucket.", "Stop, lower the bucket and hold until the person is clear or has made eye contact and been directed away.", "Use mirrors, camera and horn; never rely on them in place of separation."] },
+      { id: "B6", q: "What ground conditions affect the loader, and how do you respond?",
+        model: ["Mud, loose gravel, soft edges, wet or oily surfaces, holes and spoil heaps.", "Reduce speed, keep the bucket low, keep away from unsupported edges and trench walls.", "Report ground that cannot be traversed safely; do not proceed."] },
+      { id: "B7", q: "How should you work on a slope?",
+        model: ["Travel straight up and down gentle slopes, never across them.", "Loaded: bucket facing uphill. Empty: as the manufacturer specifies.", "No turning on a slope. Do not exceed the manufacturer's slope limits."] },
+      { id: "B8", crit: true, q: "What clearance must you keep from overhead powerlines, and what do you do if the machine contacts one?",
+        model: ["Apply the No Go Zones: 3.0 m from lines on poles, 8.0 m from lines on towers, unless a permit and spotter are in place.", "On contact: stay in the cab, warn others to keep away, try to drive clear if safe, call the network operator and 000.", "Exit only if fire forces it: jump clear with feet together, then shuffle away without touching the machine and ground at once."] },
+      { id: "B9", q: "Name other overhead and site hazards you check for before work.",
+        model: ["Low beams, doorways, canopies, pipe racks, trees.", "Underground services, trenches, stockpile faces.", "Dust, poor lighting, other plant and trucks."] },
+    ],
+  },
+  {
+    key: "C", id: "checks", title: "Pre-operational and post-operational checks",
+    lead: "The candidate performs the checks on the site's machine while the assessor observes. The candidate uses the site's pre-start checklist and states what they are checking and why.",
+    rule: "<b>Standard.</b> Every applicable item must be performed. C3, C4 and C6 are critical: an operator who cannot isolate and report a defect must not operate.",
+    videos: ["felSafety", "preStart"],
+    items: [
+      { id: "C1", q: "Walk-around: fluid levels (engine oil, coolant, hydraulic oil, fuel) and leaks",
+        ev: "Checks levels at sight glasses or dipsticks with the machine level and bucket on the ground; looks under the machine for fresh leaks." },
+      { id: "C2", q: "Tyres, rims, wheel nuts, hydraulic hoses and cylinders, pins and bushes, bucket and cutting edge",
+        ev: "Identifies cuts, bulges, low pressure, cracked welds, chafed hoses, missing retainers and worn teeth." },
+      { id: "C3", crit: true, q: "Safety features: seatbelt, service and park brake, steering, horn, lights, beacon, reversing alarm, camera, mirrors",
+        ev: "Tests each item after start-up. Confirms the park brake holds and the reversing alarm sounds." },
+      { id: "C4", crit: true, q: "ROPS and FOPS present, undamaged and unmodified",
+        ev: "Sights the compliance plate. Identifies cracks, welding or drilling on the cab structure as a defect that stops use." },
+      { id: "C5", q: "Controls and emergency stop (where fitted), articulation lock stowed",
+        ev: "Operates hydraulic controls through their range with the area clear. Confirms the articulation (steering) lock is stowed for travel and fitted for maintenance or transport." },
+      { id: "C6", crit: true, q: "Defect reporting and isolation (lock-out / tag-out)",
+        ev: "Explains and demonstrates: bucket lowered to the ground, park brake on, engine off, key removed, battery isolator off where fitted, personal danger lock and out-of-service tag applied, defect recorded on the pre-start and reported to the supervisor." },
+      { id: "C7", q: "Post-operational shutdown and parking",
+        ev: "Parks on level ground away from traffic, bucket flat on the ground, park brake on, controls neutral, engine idled to cool before shut-down, key removed, end-of-shift defects recorded." },
+    ],
+  },
+  {
+    key: "D", id: "practical", title: "Observed practical performance",
+    lead: "An uninterrupted demonstration of real tasks in the candidate's normal work area, at normal production pace. The assessor observes from a safe position outside the exclusion zone with radio contact. Stop the assessment immediately for any unsafe act.",
+    rule: "<b>Standard.</b> All applicable items performed safely and without prompting. D2, D3, D5 and D8 are critical. An unsafe act that the assessor has to stop is NYC on that item.",
+    videos: ["felSafety", "traffic", "attachments", "suspended"],
+    items: [
+      { id: "D1", q: "Mounts and dismounts the cab using three points of contact, facing the machine",
+        ev: "Uses steps and handholds, never jumps down, never uses the steering wheel or controls as a handhold." },
+      { id: "D2", crit: true, q: "Fastens the seatbelt before moving and keeps it on throughout", ev: "" },
+      { id: "D3", crit: true, q: "Travels at a site-appropriate speed with the bucket low",
+        ev: "Stays within the site speed limit (typically 8 km/h or less in shared areas). Carries the bucket in carry position. Slows for corners, ramps and poor ground." },
+      { id: "D4", q: "Fills, lifts, carries and places loads efficiently without overloading",
+        ev: "Approaches the face square, fills evenly, avoids lifting the rear wheels or spinning tyres, dumps with the machine stopped and straight, loads trucks evenly from the side away from the driver." },
+      { id: "D5", crit: true, q: "Maintains separation from people and other plant",
+        ev: "Stops when anyone enters the exclusion zone. Checks blind spots and mirrors before reversing. Follows the traffic plan, spotter and traffic controller directions." },
+      { id: "D6", q: "Handles slopes, ramps and ground conditions correctly",
+        ev: "Travels straight up and down, no turning on a slope, bucket low and facing uphill when loaded, keeps away from edges." },
+      { id: "D7", q: "Attachments: selects, removes and fits the correct attachment (N/A if none used)",
+        ev: "Confirms the attachment is rated for the machine and the coupler. Engages the quick hitch, then does a visual and physical test that the locking pins are home before lifting. Fits forks with the locking pins in." },
+      { id: "D8", crit: true, q: "Suspended loads: applies lifting controls (N/A if the loader is not used to lift and suspend loads)",
+        ev: "Lifts only from the manufacturer's rated lifting point, never from bucket teeth or an improvised sling. Confirms the machine is rated for lifting and the load is within its lifting chart. Uses a dogman or rigger as required. Keeps the load low and never slews or travels a load over people." },
+      { id: "D9", q: "Parks and shuts down to the site procedure at the end of the task", ev: "As for C7, performed without prompting." },
+    ],
+  },
+];
+
+const FIELDS = [
+  ["name", "Candidate name", "text", "Example: Jordan Citizen"],
+  ["empid", "Employee or contractor ID", "text", "EX-0417"],
+  ["date", "Assessment date", "date", "2026-10-02"],
+  ["assessor", "Assessor (name and qualification)", "text", "Example: R. Nguyen, TAE40122 + RIIMPO320F"],
+  ["machine", "Machine make, model and plant number", "text", "Caterpillar 950F · PL-12"],
+  ["attachments", "Attachments verified", "text", "GP bucket, pallet forks, quick hitch"],
+  ["site", "Site and work area", "text", "Main yard · bulk stockpile bay"],
+  ["conditions", "Conditions on the day", "text", "Dry, compacted gravel, daylight"],
+];
+
+// ---------------------------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------------------------
+const KEY = "whsm-fel-voc-draft-v1";
+const EXAMPLE = {
+  example: true,
+  fields: Object.fromEntries(FIELDS.map(([k, , , v]) => [k, v])),
+  marks: { A1: "C", A2: "C", A3: "C", A4: "C", A5: "NA", B1: "C", B2: "C", B3: "C", B4: "C", B5: "C", B6: "C", B7: "C", B8: "NYC",
+           C1: "C", C2: "C", C3: "C", C4: "C", C5: "C", C6: "C" },
+  notes: { B8: "Gave 1 m as the clearance from lines on poles. Did not know the contact procedure." },
+  remediation: "Example: 30-minute toolbox session on the No Go Zones and the powerline contact procedure, then re-ask B8. Candidate may operate only under direct supervision until B8 is re-assessed.",
+  reassess: "2026-10-09",
+};
+let S;
+try { S = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { S = null; }
+if (!S) S = structuredClone(EXAMPLE);
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ---------------------------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------------------------
+function videoCard(key) {
+  const v = VIDEOS[key];
+  if (!v.id) {
+    return `<div class="video"><div class="vslot"><b>${esc(v.title)}</b><span>Video awaiting WHSM approval</span>
+      <a href="${searchUrl(v.title)}" target="_blank" rel="noopener">Find candidates on YouTube</a></div>
+      <div class="vmeta"><span>${esc(v.note)}</span></div></div>`;
+  }
+  const start = v.start ? ` · starts ${Math.floor(v.start / 60)}:${String(v.start % 60).padStart(2, "0")}` : "";
+  return `<div class="video"><div class="vframe">
+      <button class="vplay" type="button" data-video="${key}" aria-label="Play video: ${esc(v.title)}">
+        <span class="vs">YOUTUBE${start}</span><span class="tri" aria-hidden="true"></span><span class="vt">${esc(v.title)}</span>
+      </button></div>
+    <div class="vmeta"><a href="${yt(v)}" target="_blank" rel="noopener">Watch on YouTube</a><span>${esc(v.note)}</span></div></div>`;
+}
+
+function itemRow(it) {
+  const m = S.marks[it.id] || "";
+  const name = `m-${it.id}`;
+  const seg = ["C", "NYC", "NA"].map((v) => `<input type="radio" id="${name}-${v}" name="${name}" value="${v}"${m === v ? " checked" : ""}><label for="${name}-${v}">${v === "NA" ? "N/A" : v}</label>`).join("");
+  const body = it.model
+    ? `<details class="model"><summary>Key points to hear</summary><div><ul>${it.model.map((p) => `<li>${esc(p)}</li>`).join("")}</ul></div></details>`
+    : it.ev ? `<span class="ev">${esc(it.ev)}</span>` : "";
+  return `<div class="item${m === "NYC" ? " is-nyc" : ""}" data-item="${it.id}">
+    <div class="q"><strong>${it.crit ? '<span class="crit" title="Critical item">CRITICAL</span>' : ""}<span class="mono">${it.id}</span> · ${esc(it.q)}</strong>${body}
+      <input type="text" id="n-${it.id}" data-note="${it.id}" placeholder="Assessor note (required for NYC)" value="${esc(S.notes[it.id] || "")}" aria-label="Note for ${it.id}"></div>
+    <div class="seg" role="radiogroup" aria-label="Result for ${it.id}">${seg}</div></div>`;
+}
+
+function partSection(p) {
+  const side = [...p.videos.map(videoCard)];
+  if (p.sim) side.push(`<div class="sim"><span class="eyebrow">Simulator</span><b>${esc(p.sim.label)}</b><span>${esc(LOADLAB)}:</span><ul>${p.sim.lessons.map((l) => `<li>${esc(l)}</li>`).join("")}</ul></div>`);
+  return `<section class="part" id="${p.id}">
+    <div class="part-head"><div class="row"><span class="letter">PART ${p.key}</span><span class="chip" data-chip="${p.key}"></span></div>
+      <h2>${esc(p.title)}</h2><p class="lead">${esc(p.lead)}</p></div>
+    <p class="rule">${p.rule}</p>
+    <div class="${side.length ? "split" : ""}"><div class="items">${p.items.map(itemRow).join("")}</div>
+      ${side.length ? `<div class="side">${side.join("")}</div>` : ""}</div>
+  </section>`;
+}
+
+const outcomeHTML = `<section class="part" id="outcome">
+  <div class="part-head"><div class="row"><span class="letter">PART E</span><span class="chip" data-chip="E"></span></div>
+    <h2>Outcome, remediation and currency</h2>
+    <p class="lead">The result is calculated from Parts A–D. The assessor confirms it, records any remediation, and sets the next re-verification date.</p></div>
+  <div class="verdict" id="verdict"><div><span class="eyebrow">VOC result</span><div class="big" id="vBig"></div><p id="vWhy"></p></div><span class="chip" id="vChip"></span></div>
+  <div class="tally" id="tally"></div>
+  <div class="dates" id="dates"></div>
+  <div class="fields">
+    <div class="field" style="grid-column:1/-1"><label for="remediation">Remediation plan for NYC items</label>
+      <textarea id="remediation" placeholder="Gap training for each NYC item, who delivers it, and any operating restriction until reassessment."></textarea></div>
+    <div class="field"><label for="reassess">Reassessment date for NYC items</label><input type="date" id="reassess"></div>
+  </div>
+  <h3>Re-verify before the 24-month date if any of these apply</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Trigger</th><th>Scope of re-verification</th></tr></thead>
+    <tbody>
+      <tr><td>Incident or near miss involving the operator and a loader</td><td>Full VOC, Parts B–D, after the investigation</td></tr>
+      <tr><td>Observed unsafe operation or a supervisor's concern</td><td>Parts relevant to the behaviour observed</td></tr>
+      <tr><td>No loader operation for more than 6 months</td><td>Parts C and D</td></tr>
+      <tr><td>New loader make or model, or a significantly different size class</td><td>Parts C and D on the new machine</td></tr>
+      <tr><td>New attachment, or the loader starts to be used to lift suspended loads</td><td>D7 or D8 and the related theory</td></tr>
+      <tr><td>Change to the site traffic plan or a move to a new site</td><td>B4, B5 and D5</td></tr>
+    </tbody></table></div>
+  <h3>Sign-off</h3>
+  <div class="fields">
+    <div class="field"><label for="sigCand">Candidate: I have been told the result and any restriction</label><input type="text" id="sigCand" placeholder="Name and date"></div>
+    <div class="field"><label for="sigAss">Assessor declaration: observed directly, evidence sighted</label><input type="text" id="sigAss" placeholder="Name and date"></div>
+    <div class="field"><label for="sigSup">Supervisor or WHSM owner: recorded in the training register</label><input type="text" id="sigSup" placeholder="Name and date"></div>
+  </div>
+  <h3>Assessment record</h3>
+  <p class="lead">Copy the record into the training register or the candidate's file.</p>
+  <div class="actions"><button class="btn primary" type="button" id="copyBtn">Copy record</button><span class="toast" id="toast" role="status"></span></div>
+  <pre id="record"></pre>
+  <h3>Basis of this framework</h3>
+  <ol class="refs">
+    <li>Occupational Health and Safety Act 2004 (Vic), s 21: duty to provide information, instruction, training and supervision.</li>
+    <li>Occupational Health and Safety Regulations 2017 (Vic), Part 5.1 Plant.</li>
+    <li>WorkSafe Victoria, <a href="https://www.worksafe.vic.gov.au/excavators-used-lift-and-suspend-loads" target="_blank" rel="noopener">Excavators used to lift and suspend loads</a> (applied to loaders used to lift and suspend loads).</li>
+    <li>WorkSafe Victoria, Framework for undertaking work near overhead and underground assets (No Go Zones).</li>
+    <li>Resources Regulator NSW, <a href="https://www.resources.nsw.gov.au/sites/default/files/2024-05/operating-mobile-plant-verification-of-competency.pdf" target="_blank" rel="noopener">Operating mobile plant: verification of competency</a>.</li>
+    <li>SafeWork NSW, <a href="https://www.safework.nsw.gov.au/resource-library/agriculture,-forestry-and-fishing-publications/farming-publications/farm-machinery-fact-sheet" target="_blank" rel="noopener">Farm machinery fact sheet</a> (ROPS and FOPS).</li>
+    <li>Civil Safety, <a href="https://civilsafety.edu.au/blog/verification-of-competency-voc-assessment" target="_blank" rel="noopener">Verification of competency assessment</a>; Riklan, <a href="https://riklan.com.au/course/front-end-loader-verification-of-competency/" target="_blank" rel="noopener">Front end loader VOC</a>; TrainSafe, <a href="https://www.trainsafe.com.au/conduct-wheel-loader-operations/" target="_blank" rel="noopener">Conduct wheel loader operations</a>; Pipeline Training, <a href="https://www.pipelinetraining.com.au/news/navigating-front-end-loader-operations-a-comprehensive-training-guide" target="_blank" rel="noopener">Front end loader operations guide</a>.</li>
+  </ol>
+  <p class="lead" style="font-size:.85rem">A VOC is an organisational control, not a licence: a front end loader does not require a high risk work licence in Victoria. The 24-month cycle is industry practice adopted by this WHSM, not a regulatory interval. Check the site's machine against its operator's manual for slope limits, rated lifting capacity and checks specific to that model.</p>
+</section>`;
+
+function render() {
+  document.getElementById("rail").innerHTML =
+    [["R", "setup", "Candidate and machine"], ...PARTS.map((p) => [p.key, p.id, p.title]), ["E", "outcome", "Outcome and currency"]]
+      .map(([k, id, t]) => `<a href="#${id}" data-rail="${id}"><span class="k">${k}</span><span class="t">${esc(t)}</span>${k !== "R" ? `<span class="chip" data-chip="${k}"></span>` : ""}</a>`).join("") +
+    `<div class="outcome-mini"><span class="eyebrow">Running result</span><span class="chip" id="miniChip"></span><span class="mono" style="font-size:.8rem" id="miniDue"></span></div>`;
+  document.getElementById("fields").innerHTML = FIELDS.map(([k, l, t]) =>
+    `<div class="field"><label for="f-${k}">${esc(l)}</label><input type="${t}" id="f-${k}" data-field="${k}" value="${esc(S.fields[k] || "")}"></div>`).join("");
+  const main = document.getElementById("main");
+  main.querySelectorAll("section.part:not(#setup)").forEach((s) => s.remove());
+  main.insertAdjacentHTML("beforeend", PARTS.map(partSection).join("") + outcomeHTML);
+  for (const id of ["remediation", "reassess", "sigCand", "sigAss", "sigSup"]) document.getElementById(id).value = S[id] || "";
+  document.getElementById("exampleNote").hidden = !S.example;
+  if (typeof io !== "undefined") { io.disconnect(); document.querySelectorAll("section.part").forEach((sec) => io.observe(sec)); }
+  update();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Scoring
+// ---------------------------------------------------------------------------------------------
+function partStatus(p) {
+  const marks = p.items.map((it) => S.marks[it.id]);
+  const nyc = p.items.filter((it) => S.marks[it.id] === "NYC");
+  const critNyc = nyc.filter((it) => it.crit);
+  const done = marks.filter(Boolean).length;
+  return { total: p.items.length, done, nyc, critNyc, complete: done === p.items.length };
+}
+function addMonths(iso, n) {
+  if (!iso) return null;
+  const d = new Date(iso + "T00:00:00"); if (isNaN(d)) return null;
+  d.setMonth(d.getMonth() + n); return d;
+}
+const fmt = (d) => d ? d.toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+
+function outcome() {
+  const st = Object.fromEntries(PARTS.map((p) => [p.key, partStatus(p)]));
+  const gateFail = st.A.critNyc.length > 0;
+  const allNyc = PARTS.flatMap((p) => st[p.key].nyc);
+  const crit = allNyc.filter((it) => it.crit);
+  const missingNotes = allNyc.filter((it) => !(S.notes[it.id] || "").trim());
+  const complete = PARTS.every((p) => st[p.key].complete);
+  let result, cls, why;
+  if (gateFail) { result = "Not eligible for VOC"; cls = "bad"; why = `Prerequisite evidence missing (${st.A.critNyc.map((i) => i.id).join(", ")}). Refer the candidate to a full front end loader training course. Do not continue to Parts B–D.`; }
+  else if (allNyc.length) { result = "Not yet competent"; cls = "bad"; why = `${allNyc.length} item${allNyc.length > 1 ? "s" : ""} NYC (${allNyc.map((i) => i.id).join(", ")})${crit.length ? `, including critical ${crit.map((i) => i.id).join(", ")}` : ""}. Record the remediation plan and reassess those items. The candidate does not operate unsupervised until then.`; }
+  else if (!complete) { result = "In progress"; cls = ""; why = "Record a result for every item. Mark items that do not apply to this role as N/A."; }
+  else { result = "Competent"; cls = "ok"; why = "All applicable items demonstrated. Record in the training register and issue the next due date."; }
+  return { st, result, cls, why, allNyc, missingNotes, complete, gateFail };
+}
+
+function update() {
+  const o = outcome();
+  for (const p of PARTS) {
+    const s = o.st[p.key];
+    const [txt, c] = p.key !== "A" && o.gateFail ? ["Locked", ""] : s.nyc.length ? [`${s.nyc.length} NYC`, "bad"] : s.complete ? ["Complete", "ok"] : [`${s.done}/${s.total}`, "pend"];
+    document.querySelectorAll(`[data-chip="${p.key}"]`).forEach((el) => { el.textContent = txt; el.className = `chip ${c}`; });
+  }
+  const eChip = o.cls === "ok" ? ["Competent", "ok"] : o.cls === "bad" ? [o.gateFail ? "Not eligible" : "NYC", "bad"] : ["Open", "pend"];
+  document.querySelectorAll('[data-chip="E"]').forEach((el) => { el.textContent = eChip[0]; el.className = `chip ${eChip[1]}`; });
+  for (const p of PARTS.slice(1)) document.querySelectorAll(`#${p.id} .item input`).forEach((i) => { i.disabled = o.gateFail; });
+
+  const v = document.getElementById("verdict");
+  v.className = `verdict ${o.cls}`;
+  document.getElementById("vBig").textContent = o.result;
+  document.getElementById("vWhy").textContent = o.why + (o.missingNotes.length ? ` Add an assessor note for ${o.missingNotes.map((i) => i.id).join(", ")}.` : "");
+  const vc = document.getElementById("vChip"); vc.textContent = eChip[0]; vc.className = `chip ${eChip[1]}`;
+  const mc = document.getElementById("miniChip"); mc.textContent = o.result; mc.className = `chip ${eChip[1]}`;
+
+  const all = PARTS.flatMap((p) => p.items);
+  const n = (v) => all.filter((it) => S.marks[it.id] === v).length;
+  document.getElementById("tally").innerHTML = [
+    [n("C"), "Competent"], [n("NYC"), "Not yet competent"], [n("NA"), "Not applicable"], [all.length - n("C") - n("NYC") - n("NA"), "Not yet assessed"],
+    [all.filter((i) => i.crit && S.marks[i.id] === "NYC").length, "Critical items NYC"],
+  ].map(([num, l]) => `<div><span class="n">${num}</span><span class="l">${l}</span></div>`).join("");
+
+  const due = o.cls === "ok" ? addMonths(S.fields.date, 24) : null;
+  const remind = due ? new Date(due.getTime() - 60 * 864e5) : null;
+  document.getElementById("dates").innerHTML = [
+    ["Assessed", fmt(addMonths(S.fields.date, 0))], ["Re-verification due", due ? fmt(due) : "Issued when Competent"], ["Book refresher from", remind ? fmt(remind) : "—"],
+  ].map(([l, val]) => `<div class="tally"><div><span class="l">${l}</span><span class="n" style="font-size:1rem">${val}</span></div></div>`).join("");
+  document.getElementById("miniDue").textContent = due ? `Due ${fmt(due)}` : S.fields.date ? `Assessed ${fmt(addMonths(S.fields.date, 0))}` : "";
+  document.getElementById("record").textContent = recordText(o, due);
+}
+
+function recordText(o, due) {
+  const L = [];
+  L.push("FRONT END LOADER REFRESHER VOC — WHSM-PLT-VOC-FEL rev 1.0");
+  if (S.example) L.push("*** EXAMPLE RECORD — NOT A REAL ASSESSMENT ***");
+  for (const [k, l] of FIELDS) L.push(`${l}: ${S.fields[k] || "—"}`);
+  L.push("", `RESULT: ${o.result.toUpperCase()}`, o.why);
+  if (due) L.push(`Re-verification due: ${fmt(due)}`);
+  for (const p of PARTS) {
+    L.push("", `PART ${p.key} — ${p.title}`);
+    for (const it of p.items) {
+      const m = S.marks[it.id] || "—";
+      L.push(`  [${m.padEnd(3)}] ${it.id}${it.crit ? "*" : " "} ${it.q}${S.notes[it.id] ? `\n         Note: ${S.notes[it.id]}` : ""}`);
+    }
+  }
+  L.push("  (* critical item)");
+  if (S.remediation) L.push("", `Remediation: ${S.remediation}`);
+  if (S.reassess) L.push(`Reassess NYC items by: ${S.reassess}`);
+  L.push("", `Candidate: ${S.sigCand || "—"}`, `Assessor: ${S.sigAss || "—"}`, `Supervisor / WHSM owner: ${S.sigSup || "—"}`);
+  return L.join("\n");
+}
+
+// ---------------------------------------------------------------------------------------------
+// Events
+// ---------------------------------------------------------------------------------------------
+document.addEventListener("change", (e) => {
+  const t = e.target;
+  if (t.type === "radio" && t.name.startsWith("m-")) {
+    const id = t.name.slice(2); S.marks[id] = t.value;
+    t.closest(".item").classList.toggle("is-nyc", t.value === "NYC");
+  }
+  save(); update();
+});
+document.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.dataset.field) S.fields[t.dataset.field] = t.value;
+  else if (t.dataset.note) S.notes[t.dataset.note] = t.value;
+  else if (["remediation", "reassess", "sigCand", "sigAss", "sigSup"].includes(t.id)) S[t.id] = t.value;
+  else return;
+  save(); update();
+});
+document.addEventListener("click", (e) => {
+  const play = e.target.closest(".vplay");
+  if (play) {
+    const v = VIDEOS[play.dataset.video];
+    const f = document.createElement("iframe");
+    f.src = embed(v); f.title = v.title; f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen = true;
+    play.replaceWith(f);
+  }
+});
+document.getElementById("clearBtn").addEventListener("click", () => {
+  S = { example: false, fields: { date: new Date().toISOString().slice(0, 10) }, marks: {}, notes: {} };
+  save(); render(); document.getElementById("f-name").focus();
+});
+document.getElementById("main").addEventListener("click", (e) => {
+  if (e.target.id !== "copyBtn") return;
+  const text = document.getElementById("record").textContent, toast = document.getElementById("toast");
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents(document.getElementById("record")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast.textContent = "Record selected. Press Ctrl+C to copy."; };
+  try { navigator.clipboard.writeText(text).then(() => { toast.textContent = "Copied to clipboard."; }, fallback); } catch (err) { fallback(); }
+});
+// Highlight the part in view on the rail.
+const io = new IntersectionObserver((es) => es.forEach((en) => {
+  if (en.isIntersecting) document.querySelectorAll("[data-rail]").forEach((a) => a.classList.toggle("cur", a.dataset.rail === en.target.id));
+}), { rootMargin: "-30% 0px -60% 0px" });
+
+render();
+</script>
+</body>
+</html>

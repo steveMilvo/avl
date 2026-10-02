@@ -42,7 +42,8 @@ Recommended: Chrome or Edge on a laptop with a dedicated graphics card.
 
 | Path | Purpose |
 |---|---|
-| `docs/` | Brief analysis, deployment decision, architecture, data requirements, model scope, validation, client decisions, trainer guide |
+| `docs/` | Brief analysis, deployment decision, architecture, data requirements, model scope, validation, client decisions, trainer guide, front end loader refresher VOC framework |
+| `docs/voc/` | WHSM front end loader refresher VOC assessment tool (open `fel-refresher-voc.html` in a browser) |
 | `packages/physics/` | Physics core in TypeScript, separate from rendering. SI units, documented frames |
 | `packages/physics/test/` | Analytical benchmarks and regression tests |
 | `profiles/` | Versioned machine profiles. Every number carries unit, source and status |
