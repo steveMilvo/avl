@@ -102,3 +102,24 @@ describe("travel: outcomes come from speed, radius and load", () => {
     expect(d.machineOutcome).toBe("stable");
   });
 });
+
+describe("travel: unbelted operator", () => {
+  it("forklift pitching forward under braking throws an unbelted operator out of the seat; a belted one stays", () => {
+    const s = evaluateForklift(P, fkInputs({ liftHeight: 3.5, payload: pallet(1500, { secured: true }) }));
+    const tr = trip({ kind: "brake", speed: kmh(12), accel: 4 });
+    expect(forkliftDynamics(s, { behaviour: "unbelted", travel: tr }).operatorOutcome).not.toMatch(/seat/);
+    expect(forkliftDynamics(s, { behaviour: "belted", travel: tr }).operatorOutcome).toBe("retained-by-seatbelt");
+  });
+  it("loader rollover: an unbelted operator is thrown about inside the cab and strikes its structure", () => {
+    const L = loader();
+    const s = evaluateLoader(L, ldInputs({ articulation: rad(-40), armAngle: rad(40), terrain: slope(30, -90), allowOutsideLimits: true }));
+    const d = loaderDynamics(s, { behaviour: "unbelted", travel: trip({}) });
+    expect(d.operatorOutcome).toBe("thrown-inside-cab");
+    expect(d.operator.impactSpeed!).toBeGreaterThan(0.5);
+    const g = L.geometry;
+    for (const f of d.frames) if (f.operator?.local) {
+      expect(f.operator.local.x).toBeGreaterThanOrEqual(g.cab.rearX); expect(f.operator.local.x).toBeLessThanOrEqual(g.cab.frontX);
+      expect(Math.abs(f.operator.local.y)).toBeLessThanOrEqual(g.cab.width / 2);
+    }
+  });
+});

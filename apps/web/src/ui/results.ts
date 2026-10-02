@@ -108,7 +108,7 @@ export const OUTCOME: Record<DynamicsResult["machineOutcome"], [string, string]>
 };
 export const OP_OUTCOME: Record<DynamicsResult["operatorOutcome"], string> = {
   none: "", "retained-by-seatbelt": "Operator held by seatbelt inside the protective structure",
-  "thrown-inside-cab": "Unbelted operator thrown about inside the closed cab", "remained-in-seat": "Operator remained in the seat",
+  "thrown-inside-cab": "No seatbelt: operator thrown out of the seat, striking the inside of the cab", "remained-in-seat": "Operator remained in the seat",
   "thrown-clear": "Operator thrown from the machine (fall)", "entrapment-zone": "Operator in the crush / entrapment zone",
 };
 

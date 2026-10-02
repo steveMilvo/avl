@@ -1,10 +1,10 @@
 :root {
   --bg: #0f1418; --panel: #161d23; --panel2: #1d262e; --line: #2b3640; --text: #e8edf1; --muted: #93a2ae;
   --accent: #ffb000; --ok: #2fbf71; --warn: #f5a524; --bad: #ff4d4f; --neutral: #6b7a86; --brand: #ff7a00;
-  font: 15px/1.4 "Segoe UI", system-ui, -apple-system, sans-serif; color: var(--text); background: var(--bg);
+  font: 15px/1.4 "Segoe UI", system-ui, -apple-system, sans-serif; color: var(--text); background: var(--bg); color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { margin: 0; height: 100vh; display: grid; grid-template: "top top top" 56px "left view right" 1fr "left time right" 64px / 330px 1fr 390px; overflow: hidden; background: var(--bg); }
+body { color: var(--text); font: 15px/1.4 "Segoe UI", system-ui, -apple-system, sans-serif; margin: 0; height: 100vh; display: grid; grid-template: "top top top" 56px "left view right" 1fr "left time right" 64px / 330px 1fr 390px; overflow: hidden; background: var(--bg); }
 #topbar { grid-area: top; display: flex; align-items: center; gap: 18px; padding: 0 14px; background: #0b0f12; border-bottom: 1px solid var(--line); overflow-x: auto; }
 .brand { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
 .logo { font-weight: 800; font-size: 22px; letter-spacing: 0.5px; color: var(--brand); }
@@ -69,7 +69,7 @@ ul.events { list-style: none; padding: 0; margin: 0; font-size: 12.5px; } ul.eve
 #banner .b-note { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
 #banner.ok { border-color: var(--ok); } #banner.warn { border-color: var(--warn); } #banner.bad { border-color: var(--bad); }
 #banner.bad .b-title { color: #ff6b6b; } #banner.warn .b-title { color: #ffc14d; } #banner.ok .b-title { color: #6ee7a8; }
-#legend { position: absolute; left: 10px; bottom: 8px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; background: rgba(10, 14, 18, 0.7); padding: 4px 8px; border-radius: 6px; z-index: 3; max-width: calc(100% - 20px); }
+#legend { color: var(--text); position: absolute; left: 10px; bottom: 8px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; background: rgba(10, 14, 18, 0.7); padding: 4px 8px; border-radius: 6px; z-index: 3; max-width: calc(100% - 20px); }
 #legend i { display: inline-block; width: 12px; height: 12px; margin-right: 4px; vertical-align: -2px; }
 .lg-blue { background: #1f6fff; border-radius: 50%; } .lg-orange { background: #ff8a00; } .lg-magenta { background: #ff2bd6; transform: rotate(45deg) scale(0.8); }
 .lg-line { background: #ff2bd6; height: 3px !important; } .lg-cyan { background: #00e5ff; height: 3px !important; } .lg-green { background: #39d353; height: 3px !important; } .lg-red { background: #ff3b30; height: 3px !important; }

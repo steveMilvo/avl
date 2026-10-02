@@ -1,4 +1,4 @@
-import { type Vec3, type Frame, v, add, sub, scale, dot, cross, norm, normalize, rotateAboutLine, axisAngle, apply, compose, transformPoint, IDENTITY_FRAME, rotZ } from "./math.js";
+import { type Vec3, type Frame, v, add, sub, scale, dot, cross, norm, normalize, rotateAboutLine, axisAngle, apply, compose, transformPoint, IDENTITY_FRAME, rotZ, transpose } from "./math.js";
 import { type MassComponent } from "./mass.js";
 import { type StabilityResult, applyRoll } from "./stability.js";
 import { type Terrain, gravityDirInGroundFrame } from "./terrain.js";
@@ -57,6 +57,8 @@ export interface OperatorSetup {
   jumpSpeed: number;
   /** "fall" = toward the side the machine is falling to; "high" = away from it. */
   jumpSide: "fall" | "high";
+  /** Enclosed cab interior the unbelted operator is confined to (unrolled body coordinates, hip-point limits). */
+  cab?: { x0: number; x1: number; y0: number; y1: number; z0: number; z1: number };
 }
 
 export interface PayloadReleaseSetup {
@@ -143,7 +145,7 @@ export interface DynamicsSetup {
   bodyFriction?: number;
 }
 
-export interface BodyState { attached: boolean; p: Vec3; v: Vec3; landed: boolean }
+export interface BodyState { attached: boolean; p: Vec3; v: Vec3; landed: boolean; inCab?: boolean; local?: Vec3 }
 
 export interface DynFrame {
   t: number;
@@ -400,7 +402,7 @@ export const simulateTipOver = (setup: DynamicsSetup): DynamicsResult => {
   let done = false, settledBack = false;
   let restingOn: string[] = [];
   let blockedAt: number | undefined;
-  let landedSpeedPayload = 0, landedSpeedOp = 0;
+  let landedSpeedPayload = 0, landedSpeedOp = 0, cabImpact = 0, lastCabEvent = -1;
 
   const pointAccelW = (q: Vec3, w: number, a: number): Vec3 => {
     const d = sub(q, H.from);
@@ -547,17 +549,19 @@ export const simulateTipOver = (setup: DynamicsSetup): DynamicsResult => {
       let leave = false, jump = false;
       const sb = seatB();
       if (O.behaviour === "jump" && t - tipStart >= O.reactionTime && moving) { leave = true; jump = true; }
-      else if (O.behaviour === "unbelted" && !O.enclosedCab) {
+      else if (O.behaviour === "unbelted") {
+        // Seat contact: friction resists sliding sideways and forward; the seat back takes rearward loads.
         const q = worldP(sb, theta);
         const fo = sub(f, pointAccelW(q, omega, aNow));
-        const n = worldD(rollD(v(0, 0, 1)), theta), l = worldD(rollD(v(0, 1, 0)), theta);
-        const N = -dot(fo, n), Tl = dot(fo, l);
-        leave = N <= 0 || Math.abs(Tl) > O.seatFriction * N;
+        const n = worldD(rollD(v(0, 0, 1)), theta), l = worldD(rollD(v(0, 1, 0)), theta), fw = worldD(rollD(v(1, 0, 0)), theta);
+        const N = -dot(fo, n), Tl = dot(fo, l), Tf = Math.max(0, dot(fo, fw));
+        leave = N <= 0 || Math.hypot(Tl, Tf) > O.seatFriction * N;
       }
       if (leave) {
         const q = worldP(sb, theta);
         operator = { attached: false, p: toSite(q), v: siteVel(q), landed: false };
         operatorGone = true;
+        if (!jump && O.enclosedCab && O.cab) { operator.inCab = true; operator.local = O.seat; }
         if (jump) {
           const inward = cross(st.resultantEval.normal, (firstHinge ?? H).axis);
           const sideV = O.jumpSide === "fall" ? scale(inward, -1) : inward;
@@ -565,7 +569,7 @@ export const simulateTipOver = (setup: DynamicsSetup): DynamicsResult => {
           const horiz = normalize(sub(sideV, scale(n, dot(sideV, n))));
           operator.v = add(operator.v, dirToSite(add(scale(horiz, O.jumpSpeed), scale(n, 1.0))));
           events.push({ t, type: "operator-jumped", text: `Operator jumped toward the ${O.jumpSide === "fall" ? "side the machine is falling to" : "high side"} ${fmt(t - tipStart, 2)} s after tipping began.` });
-        } else events.push({ t, type: "operator-released", text: "Unbelted operator slid off the seat." });
+        } else events.push({ t, type: "operator-released", text: O.enclosedCab && O.cab ? "Unbelted operator thrown out of the seat inside the cab." : "Unbelted operator thrown out of the seat." });
         if (opInModel()) { removeMass("operator"); if (moving) I = inertia(); }
       }
     }
@@ -575,7 +579,37 @@ export const simulateTipOver = (setup: DynamicsSetup): DynamicsResult => {
       events.push({ t, type: "payload-landed", text: `Load struck the ground at ${fmt(landedSpeedPayload)} m/s.` });
       payload.v = v(0, 0, 0);
     }
-    if (operator && !operator.attached) {
+    if (operator && !operator.attached && operator.inCab && !operator.landed && O?.cab) {
+      // Free flight inside the moving, rotating cab; inelastic contact with floor, walls and roof.
+      const b = operator, box = O.cab;
+      b.v = add(b.v, scale(gSite, G * dt));
+      b.p = add(b.p, scale(b.v, dt));
+      const full = compose(travelFrame(), compose(tipping ? X(theta) : IDENTITY_FRAME, rollFrameOf(st)));
+      const RT = transpose(full.R);
+      const loc = apply(RT, sub(b.p, full.t));
+      const c = { x: Math.min(box.x1, Math.max(box.x0, loc.x)), y: Math.min(box.y1, Math.max(box.y0, loc.y)), z: Math.min(box.z1, Math.max(box.z0, loc.z)) };
+      const hit = { x: c.x !== loc.x ? Math.sign(loc.x - c.x) : 0, y: c.y !== loc.y ? Math.sign(loc.y - c.y) : 0, z: c.z !== loc.z ? Math.sign(loc.z - c.z) : 0 };
+      if (hit.x || hit.y || hit.z) {
+        b.p = transformPoint(full, c);
+        const qPre = tipping ? worldP(rollP(c), theta) : rollP(c);
+        const vb = siteVel(qPre);
+        const lv = apply(RT, sub(b.v, vb));
+        let imp = 0;
+        const out = { x: lv.x, y: lv.y, z: lv.z };
+        for (const k of ["x", "y", "z"] as const) if (hit[k] && Math.sign(out[k]) === hit[k]) { imp = Math.max(imp, Math.abs(out[k])); out[k] = 0; }
+        for (const k of ["x", "y", "z"] as const) if (!hit[k]) out[k] *= 0.9;
+        b.v = add(vb, apply(full.R, v(out.x, out.y, out.z)));
+        if (imp > cabImpact) cabImpact = imp;
+        if (imp > 1.5 && t - lastCabEvent > 0.25) {
+          lastCabEvent = t;
+          const where = hit.z > 0 ? "cab roof" : hit.z < 0 ? "cab floor" : hit.y ? `${hit.y > 0 ? "left" : "right"} side of the cab` : hit.x > 0 ? "front of the cab" : "back of the cab";
+          events.push({ t, type: "operator-landed", text: `Unbelted operator struck the ${where} at ${fmt(imp)} m/s.` });
+        }
+        const settled = !(tipping && !done && !settledBack) && motionSample().speed < 0.05;
+        if (settled && norm(sub(b.v, vb)) < 0.15) b.landed = true;
+      }
+      b.local = c;
+    } else if (operator && !operator.attached) {
       opMaxZ = Math.max(opMaxZ, operator.p.z);
       if (stepFree(operator, 0.15)) {
         landedSpeedOp = norm(operator.v);
@@ -652,6 +686,8 @@ export const simulateTipOver = (setup: DynamicsSetup): DynamicsResult => {
     const overish = machineOutcome === "overturned" || machineOutcome === "leaning";
     if (operator.attached) {
       operatorOutcome = overish ? (O.behaviour === "belted" ? "retained-by-seatbelt" : O.enclosedCab ? "thrown-inside-cab" : "remained-in-seat") : "remained-in-seat";
+    } else if (operator.inCab) {
+      operatorOutcome = "thrown-inside-cab"; opInfo.impactSpeed = cabImpact;
     } else {
       opInfo.landedAt = operator.p; opInfo.impactSpeed = landedSpeedOp; opInfo.fallHeight = opMaxZ;
       operatorOutcome = "thrown-clear";
@@ -680,7 +716,7 @@ export const simulateTipOver = (setup: DynamicsSetup): DynamicsResult => {
   if (machineOutcome === "still-tipping") summary.push("The machine was still moving when the simulation ended.");
   if (payload && !payload.attached) summary.push(`The load left the ${ctx.payload?.mode === "granular" ? "bucket" : "forks"} and fell ${fmt(payloadDrop)} m.`);
   if (operatorOutcome === "retained-by-seatbelt") summary.push("The seatbelt held the operator inside the protective structure.");
-  if (operatorOutcome === "thrown-inside-cab") summary.push("The unbelted operator was thrown about inside the closed cab.");
+  if (operatorOutcome === "thrown-inside-cab") summary.push(cabImpact > 0 ? `The unbelted operator was thrown out of the seat and struck the cab structure at up to ${fmt(cabImpact)} m/s. A seatbelt keeps the operator in the seat.` : "The unbelted operator was thrown about inside the closed cab.");
   if (operatorOutcome === "thrown-clear") summary.push(`The operator left the machine and hit the ground at ${fmt(landedSpeedOp)} m/s.`);
   if (operatorOutcome === "entrapment-zone") summary.push(`The operator ended up where the machine came down, near the ${opInfo.under?.toLowerCase()}. This is the crush and entrapment zone.`);
 

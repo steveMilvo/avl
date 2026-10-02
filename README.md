@@ -19,7 +19,7 @@ slow-motion replay. No outcome is scripted; everything comes from the tested phy
 ```bash
 pnpm install
 pnpm dev            # opens the app at http://localhost:5173
-pnpm test           # 73 physics benchmark and regression tests
+pnpm test           # 75 physics benchmark and regression tests
 pnpm build:single   # apps/web/dist-single/index.html — one file, double-click to open offline
 ```
 

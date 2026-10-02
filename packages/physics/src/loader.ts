@@ -264,6 +264,11 @@ export const loaderDynamics = (s: LoaderState, opts: DynamicsOptions): DynamicsR
       seat: v(p.operatorSeat.hip.x, p.operatorSeat.hip.y, p.operatorSeat.hip.z), mass: p.masses.operator.mass,
       behaviour: opts.behaviour, enclosedCab: p.operatorSeat.enclosedCab, seatFriction: p.operatorSeat.seatFriction,
       reactionTime: 0.4, jumpSpeed: 2.5, jumpSide: opts.jumpSide ?? "fall",
+      ...(p.operatorSeat.enclosedCab ? { cab: {
+        x0: p.geometry.cab.rearX + 0.3, x1: p.geometry.cab.frontX - 0.3,
+        y0: -p.geometry.cab.width / 2 + 0.25, y1: p.geometry.cab.width / 2 - 0.25,
+        z0: p.operatorSeat.hip.z - 0.35, z1: p.geometry.cab.ropsHeight - 0.45,
+      } } : {}),
     },
     ...(opts.dt ? { dt: opts.dt } : {}),
     ...(opts.tEnd ? { tEnd: opts.tEnd } : {}),

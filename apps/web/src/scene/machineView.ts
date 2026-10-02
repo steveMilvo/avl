@@ -195,7 +195,14 @@ export class MachineView {
     // operator
     const op = this.model.operator;
     const opEv = d.events.find((x) => x.type === "operator-released" || x.type === "operator-jumped");
-    if (opEv && t >= opEv.t && f.operator && !f.operator.attached) {
+    if (opEv && t >= opEv.t && f.operator && !f.operator.attached && f.operator.inCab && f.operator.local) {
+      // unbelted operator thrown around inside the enclosed cab (cab-fixed coordinates)
+      if (op.parent !== this.model.roll) { this.model.roll.add(op); op.matrixAutoUpdate = true; }
+      const ph = t - opEv.t;
+      op.position.copy(T(f.operator.local));
+      if (f.operator.landed) { op.lying(); op.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2); }
+      else { op.airborne(ph); op.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.min(1.4, ph * 2)); }
+    } else if (opEv && t >= opEv.t && f.operator && !f.operator.attached) {
       if (op.parent !== this.stage.groundFrame) { this.stage.groundFrame.add(op); this.opReleaseT = opEv.t; }
       op.position.copy(T(f.operator.p));
       if (f.operator.landed) {

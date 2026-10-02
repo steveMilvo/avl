@@ -12,7 +12,7 @@
 
 Matching one tipping value does not validate slope, articulation or dynamic behaviour generally.
 
-## Test coverage (73 tests, `pnpm test`)
+## Test coverage (75 tests, `pnpm test`)
 
 Mass accounting and units · rotation sign conventions · terrain decomposition · resultant line of
 action · forward tipping load vs closed-form moment balance · tilt geometry · slope shift = h·tan θ ·

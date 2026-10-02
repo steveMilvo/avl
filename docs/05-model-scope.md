@@ -47,7 +47,9 @@
   angular velocity from conservation of angular momentum. If the resultant lies inside, it comes to rest.
 - Unsecured load release from the same fork check, including the body's rotational acceleration;
   separated masses fly ballistically.
-- Operator: belted (stays in the seat), unbelted (slides out of an open-sided forklift when seat friction
+- Operator: belted (stays in the seat), unbelted (thrown from the seat when seat friction is exceeded sideways or
+  forward — out of an open-sided forklift, or around inside a closed loader cab with inelastic contact on
+  floor, walls and roof, reporting impact speeds), or jumps; previously: (slides out of an open-sided forklift when seat friction
   is exceeded; stays inside a closed loader cab), or jumps after a 0.4 s reaction time at 2.5 m/s
   (assumed values). Entrapment zone = ground footprint of structure lying within 0.8 m of the ground at
   the final pose.
