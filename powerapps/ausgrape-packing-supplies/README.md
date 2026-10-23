@@ -9,13 +9,13 @@ paperwork.
 - **Every AusGrape worker** marks off stock as they take it from storage: a **button for each section**
   of the stocktake sheet, then a **drop-down for the item**, quantity, store and **job / order number**.
   Each take is recorded against their **AVL ID**, name and time.
-- **Pack items use up their supplies automatically.** Taking a 200 L steel drum also takes 1 × aseptic bag
-  (Scholle 802955, or Hansin MB6071 if that's the one used), 1 × 60 micron liner, cable ties, 1 × PP
-  seal and 1 × label. The worker can change the bag type or quantity before saving.
+- **Pack items use up their supplies automatically.** Taking a 200 L steel drum also takes 1 × Scholle 802955
+  aseptic bag, 1 × 60 micron liner, 1 × cable tie, 1 × PP seal and 1 × label. (Hansin MB6071 and the
+  100 micron liner remain selectable alternatives.) The worker can change the bag type or quantity before saving.
 - **One central register** (`AG Stock Movements` SharePoint list) holds every movement. It opens in
   Excel in one click.
-- **Alerts:** email to Peter when an item hits **20%**. A **Teams** message (plus email) when it hits
-  **10% or less**.
+- **Alerts:** email to Peter when an item hits **20%**. A **Teams** message (the second
+  notification) when it hits **10% or less**.
 - **Daily report** to Peter: stock used, who used it, the time and the job / order number.
 - **Main board:** a tile for the Buronga AVL app nest.
 
@@ -53,7 +53,7 @@ All four lists have version history turned on, so every edit is kept.
 
 ## Build steps
 
-1. **Lists:** open the SharePoint site → DevTools console → paste `sharepoint/provision-lists.js` (first
+1. **Lists:** open https://australianvintagecomau.sharepoint.com/sites/AustralianVintage/_layouts/15/viewlsts.aspx → DevTools console → paste `sharepoint/provision-lists.js` (first
    fill in Peter's email and AVL ID in `CONFIG`). Check the summary: 61 items, 15 recipe rows.
 2. **App:** Power Apps → Create → Blank canvas app → **Phone** → name *AusGrape Packing Supplies*. Add the
    4 lists as SharePoint data sources. Settings → Data row limit = 2000.
@@ -75,10 +75,10 @@ All four lists have version history turned on, so every edit is kept.
 
 | What | Where |
 |---|---|
-| Central movement register | `<site>/Lists/AG%20Stock%20Movements` — sort or filter by day, worker, job or item. **Export → Export to Excel** gives a live-refreshing spreadsheet. |
-| Current stock | `<site>/Lists/AG%20Stock%20Items` (or the Stock levels screen) |
-| Pack recipes | `<site>/Lists/AG%20Pack%20Recipes` — Peter edits these in grid view. |
-| Who can use the app | `<site>/Lists/AG%20Supply%20Members` |
+| Central movement register | `https://australianvintagecomau.sharepoint.com/sites/AustralianVintage/Lists/AG%20Stock%20Movements` — sort or filter by day, worker, job or item. **Export → Export to Excel** gives a live-refreshing spreadsheet. |
+| Current stock | `https://australianvintagecomau.sharepoint.com/sites/AustralianVintage/Lists/AG%20Stock%20Items` (or the Stock levels screen) |
+| Pack recipes | `https://australianvintagecomau.sharepoint.com/sites/AustralianVintage/Lists/AG%20Pack%20Recipes` — Peter edits these in grid view. |
+| Who can use the app | `https://australianvintagecomau.sharepoint.com/sites/AustralianVintage/Lists/AG%20Supply%20Members` |
 | Change history of any row | the row's `…` menu → Version history |
 
 ## Things to know
@@ -94,22 +94,22 @@ All four lists have version history turned on, so every edit is kept.
   correct either way, and *Rebuild balances from register* fixes the totals from it.
 - Only the BHW and HQ2 stores are tracked. A third store (e.g. PTG) would need one extra column.
 
-## Questions for Peter before go-live
+## Decisions (confirmed 23/10/2026)
 
-1. **Cable ties per drum.** The recipe assumes 1. Confirm the real number. Also confirm the label (1 blank
-   sticker per drum) and whether drum pallets (VIP RED) should come off automatically (e.g. 1 per 4
-   drums).
-2. **Bag per drum.** The Packaging Request Form says Scholle 802955. The product spec (option 1) says Hansin
-   MB6071. Both are offered in the app. Which should be the default?
-3. **Full stock levels.** These were seeded from the 31/08/2026 count, so each item's 20% / 10% alert is
-   measured against that count. Set the real "full" level for each item; an item set to 0 never alerts.
-   Items that were 0 at that count currently have no alerts.
-4. **31/08 sheet discrepancies.** The Total column doesn't match BHW + HQ2 for 1000L Cardboard IBC (157 vs
-   544), Scholle 200L #802955 (635 vs 225), Hansin 1400L (926 vs 320), Hansin 20L (1490 vs 4320) and
-   Pallecons (3 vs 6). The go-live count will settle these.
-5. **Draft recipes.** Fibre drum (tech screws, staples) and 1000 L cardboard IBC (bag, PW liner, strapping
-   clamps) are loaded but switched **off**. Confirm the quantities and switch them on.
-6. **Contacts.** Peter's work email and AVL ID, the staff list (name, AVL ID, email), and whether the Teams
-   alert goes to Peter's chat or a team channel.
-7. **Report time.** The daily report goes at 4:45 pm Mon–Sat. Change if needed.
-8. **Name spelling.** The brief says "Manovik"; the AusGrape forms say "Manovic". The pack uses Manovic.
+| Question | Answer |
+|---|---|
+| Cable ties per drum | 1 |
+| Drum bag and liner | 1 × Scholle 802955 + 1 × 60 micron (defaults; alternatives still selectable) |
+| Alerts | 1st notification email at 20%, 2nd notification Teams at 10% |
+| 31/08 sheet discrepancies | Settled by the go-live count |
+| Draft recipes (fibre drum, cardboard IBC) | Left switched off until Peter turns them on in `AG Pack Recipes` |
+| SharePoint site | https://australianvintagecomau.sharepoint.com/sites/AustralianVintage |
+| Manager name | Peter Manovic |
+
+## Still needed before go-live
+
+1. Peter's work email and AVL ID (fill in `CONFIG` in `provision-lists.js`).
+2. Staff list: name, AVL ID, work email for each AusGrape worker.
+3. Teams alert destination: Peter's chat with Flow bot (default) or a team channel.
+4. Full stock level for each item. These are seeded from the 31/08 count; items that were 0 have no alerts until set.
+5. Daily report time: 4:45 pm Mon–Sat unless changed.

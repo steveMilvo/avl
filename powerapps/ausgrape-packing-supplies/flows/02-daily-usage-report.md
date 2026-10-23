@@ -101,7 +101,7 @@ From: `body('GetLow')?['value']`
 @{if(equals(length(body('InOut')),0),'<p>None.</p>',body('InOutTable'))}
 <h3>Items currently low (20% or less) or critical (10% or less)</h3>
 @{if(equals(length(body('GetLow')?['value']),0),'<p>None.</p>',body('LowTable'))}
-<p style="color:#666">From the AG Stock Movements register: &lt;site&gt;/Lists/AG%20Stock%20Movements</p>
+<p style="color:#666">From the AG Stock Movements register: https://australianvintagecomau.sharepoint.com/sites/AustralianVintage/Lists/AG%20Stock%20Movements</p>
 ```
 
 ## Test

@@ -107,15 +107,15 @@
   // Pack recipes: what one pack unit also uses up.
   // [PackItemCode, ComponentCode, AltComponentCode, QtyPerPack, Active, Notes]
   const RECIPES = [
-    // 200 L steel drum, from the Packaging Request Form "PACK 1" block.
-    ['CON-220L-STEEL-RECON', 'SCH-200L-802955', 'HAN-220L-MB6071', 1, true, 'Aseptic bag. PRF says Scholle 802955; product spec option 1 says Hansin MB6071. Worker picks the one used.'],
-    ['CON-220L-STEEL-RECON', 'LIN-200L-60UM', 'LIN-200L-100UM', 1, true, '1 x 60 micron liner'],
-    ['CON-220L-STEEL-RECON', 'SEA-ZIP-TIE', '', 1, true, 'Cable ties - CONFIRM how many per drum'],
+    // 200 L steel drum, from the Packaging Request Form "PACK 1" block (confirmed by AusGrape 23/10/2026).
+    ['CON-220L-STEEL-RECON', 'SCH-200L-802955', 'HAN-220L-MB6071', 1, true, '1 x Scholle 802955 (confirmed default). Hansin MB6071 selectable if used instead.'],
+    ['CON-220L-STEEL-RECON', 'LIN-200L-60UM', 'LIN-200L-100UM', 1, true, '1 x 60 micron liner (confirmed default)'],
+    ['CON-220L-STEEL-RECON', 'SEA-ZIP-TIE', '', 1, true, '1 x cable tie (confirmed)'],
     ['CON-220L-STEEL-RECON', 'SEA-PP-SEAL', '', 1, true, 'PP seal - 1 per steel drum (Stock Weights sheet)'],
     ['CON-220L-STEEL-RECON', 'STK-BLANK', '', 1, true, 'Label 1: 1/3 top of drum - batch details'],
     ['CON-220L-STEEL-2ND', 'SCH-200L-802955', 'HAN-220L-MB6071', 1, true, 'Same as reconditioned drum'],
     ['CON-220L-STEEL-2ND', 'LIN-200L-60UM', 'LIN-200L-100UM', 1, true, ''],
-    ['CON-220L-STEEL-2ND', 'SEA-ZIP-TIE', '', 1, true, 'CONFIRM how many per drum'],
+    ['CON-220L-STEEL-2ND', 'SEA-ZIP-TIE', '', 1, true, '1 x cable tie (confirmed)'],
     ['CON-220L-STEEL-2ND', 'SEA-PP-SEAL', '', 1, true, ''],
     ['CON-220L-STEEL-2ND', 'STK-BLANK', '', 1, true, ''],
     // Drafts from the Stock Weights comments. Inactive until Peter confirms them.
