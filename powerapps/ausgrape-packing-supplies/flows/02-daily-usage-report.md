@@ -89,7 +89,7 @@ From: `body('GetLow')?['value']`
 ### 11. Create HTML table — rename to `LowTable` (From: `body('LowRows')`)
 
 ### 12. Office 365 Outlook — *Send an email (V2)*
-- To: Peter's work email (add others with `;` if wanted)
+- To: `pmanovic@avlwines.com.au` (add others with `;` if wanted)
 - Subject: `AusGrape supplies used - @{outputs('Today')} - @{length(body('Used'))} lines`
 - Body (switch the editor to code view `</>` and paste):
 

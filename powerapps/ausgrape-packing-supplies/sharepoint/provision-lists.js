@@ -3,7 +3,7 @@
  *
  * HOW TO RUN
  *   1. Open the target SharePoint site in Chrome or Edge (e.g. {site}/_layouts/15/viewlsts.aspx).
- *   2. Edit CONFIG below (Peter's work email and AVL ID, plus any staff you already know).
+ *   2. Edit CONFIG below (`pmanovic@avlwines.com.au` and AVL ID, plus any staff you already know).
  *   3. Open DevTools > Console, paste this whole file and press Enter.
  *   4. Wait for "DONE". Run `window.__agReport` to see the summary again.
  *
@@ -14,7 +14,7 @@
   const CONFIG = {
     // Members of the app. Role "Manager" sees Receive / Stocktake / Transfer. "Staff" can only take stock.
     members: [
-      { Title: 'Peter Manovic', AVLID: 'CHANGE-ME', Email: 'peter.manovic@CHANGE-ME', SupplyRole: 'Manager' },
+      { Title: 'Peter Manovic', AVLID: 'TBC-PMANOVIC', Email: 'pmanovic@avlwines.com.au', SupplyRole: 'Manager' }, // AVLID: replace with Peter's real AVL ID
       // { Title: 'Rick Podmore', AVLID: '12345', Email: 'rick.podmore@...', SupplyRole: 'Staff' },
     ],
   };

@@ -108,7 +108,7 @@ All four lists have version history turned on, so every edit is kept.
 
 ## Still needed before go-live
 
-1. Peter's work email and AVL ID (fill in `CONFIG` in `provision-lists.js`).
+1. `pmanovic@avlwines.com.au` and AVL ID (fill in `CONFIG` in `provision-lists.js`).
 2. Staff list: name, AVL ID, work email for each AusGrape worker.
 3. Teams alert destination: Peter's chat with Flow bot (default) or a team channel.
 4. Full stock level for each item. These are seeded from the 31/08 count; items that were 0 have no alerts until set.
