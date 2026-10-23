@@ -3,7 +3,7 @@
  *
  * HOW TO RUN
  *   1. Open the target SharePoint site in Chrome or Edge (e.g. {site}/_layouts/15/viewlsts.aspx).
- *   2. Edit CONFIG below (Peter's AVL ID, plus any staff you already know).
+ *   2. Add any staff you already know to CONFIG below. Peter's AVL ID is asked for when the script runs.
  *   3. Open DevTools > Console, paste this whole file and press Enter.
  *   4. Wait for "DONE". Run `window.__agReport` to see the summary again.
  *
@@ -14,7 +14,7 @@
   const CONFIG = {
     // Members of the app. Role "Manager" sees Receive / Stocktake / Transfer. "Staff" can only take stock.
     members: [
-      { Title: 'Peter Manovic', AVLID: 'TBC-PMANOVIC', Email: 'pmanovic@avlwines.com.au', SupplyRole: 'Manager' }, // AVLID: replace with Peter's real AVL ID
+      { Title: 'Peter Manovic', AVLID: 'ASK', Email: 'pmanovic@avlwines.com.au', SupplyRole: 'Manager' }, // AVLID 'ASK' = the script asks for it when run
       // { Title: 'Rick Podmore', AVLID: '12345', Email: 'rick.podmore@...', SupplyRole: 'Staff' },
     ],
   };
@@ -283,10 +283,13 @@
   await seed('AG Pack Recipes', 'Title', RECIPES.map(([pack, comp, alt, qty, active, notes]) => ({
     Title: `${pack}|${comp}`, PackItemCode: pack, ComponentCode: comp, AltComponentCode: alt, QtyPerPack: qty, Active: active, Notes: notes,
   })));
+  for (const m of CONFIG.members) {
+    if (m.AVLID === 'ASK') m.AVLID = (window.prompt(`AVL ID for ${m.Title} (${m.Email})`) || '').trim() || 'CHANGE-ME';
+  }
   await seed('AG Supply Members', 'Email', CONFIG.members
-    .filter((m) => !m.Email.includes('CHANGE-ME'))
+    .filter((m) => !m.Email.includes('CHANGE-ME') && m.AVLID !== 'CHANGE-ME')
     .map((m) => ({ ...m, Email: m.Email.toLowerCase(), Active: true })));
-  if (CONFIG.members.some((m) => m.Email.includes('CHANGE-ME'))) say('NOTE: members with CHANGE-ME were skipped - fill in CONFIG and run again.');
+  if (CONFIG.members.some((m) => m.Email.includes('CHANGE-ME') || m.AVLID === 'CHANGE-ME')) say('NOTE: members with no email or AVL ID were skipped - run again and enter the AVL ID.');
 
   // ----------------------------------------------------------------- verify
   for (const def of LISTS) {

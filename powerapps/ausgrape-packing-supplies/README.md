@@ -53,8 +53,7 @@ All four lists have version history turned on, so every edit is kept.
 
 ## Build steps
 
-1. **Lists:** open https://australianvintagecomau.sharepoint.com/sites/AustralianVintage/_layouts/15/viewlsts.aspx → DevTools console → paste `sharepoint/provision-lists.js` (first
-   fill in Peter's email and AVL ID in `CONFIG`). Check the summary: 61 items, 15 recipe rows.
+1. **Lists:** open https://australianvintagecomau.sharepoint.com/sites/AustralianVintage/_layouts/15/viewlsts.aspx → DevTools console → paste `sharepoint/provision-lists.js` (Peter's AVL ID is asked for when it runs; add any known staff to `CONFIG` first). Check the summary: 61 items, 15 recipe rows.
 2. **App:** Power Apps → Create → Blank canvas app → **Phone** → name *AusGrape Packing Supplies*. Add the
    4 lists as SharePoint data sources. Settings → Data row limit = 2000.
 3. Paste `App.OnStart` from `App.fx.md`. Create the 5 blank screens (`scrHome`, `scrTake`,
@@ -110,6 +109,5 @@ All four lists have version history turned on, so every edit is kept.
 
 ## Still needed before go-live
 
-1. Peter's AVL ID. His email (pmanovic@avlwines.com.au) is set; until the ID arrives he is loaded with AVL ID `TBC-PMANOVIC`. Manager access works by email, but correct his row in `AG Supply Members` before he logs takes.
-2. Staff list: name, AVL ID, work email for each AusGrape worker.
-3. Full stock level for each item. These are seeded from the 31/08 count; items that were 0 have no alerts until set.
+1. Staff list: name, AVL ID, work email for each AusGrape worker.
+2. Full stock level for each item. These are seeded from the 31/08 count; items that were 0 have no alerts until set.
