@@ -3,7 +3,7 @@
  *
  * HOW TO RUN
  *   1. Open the target SharePoint site in Chrome or Edge (e.g. {site}/_layouts/15/viewlsts.aspx).
- *   2. Edit CONFIG below (`pmanovic@avlwines.com.au` and AVL ID, plus any staff you already know).
+ *   2. Edit CONFIG below (Peter's AVL ID, plus any staff you already know).
  *   3. Open DevTools > Console, paste this whole file and press Enter.
  *   4. Wait for "DONE". Run `window.__agReport` to see the summary again.
  *
