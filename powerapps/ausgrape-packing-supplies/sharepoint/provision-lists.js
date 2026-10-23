@@ -153,7 +153,7 @@
       desc: 'AusGrape packing supplies - central register of every stock movement (in, out, count, transfer).',
       titleName: 'Movement ID', titleUnique: true,
       fields: [
-        ['MovementDate', 'DateTime'],
+        ['MovementDate', 'DateTime', { indexed: true }],
         ['MovementDay', 'Text', { indexed: true }],
         ['MovementType', 'Text', { indexed: true }],
         ['ItemCode', 'Text', { indexed: true }],

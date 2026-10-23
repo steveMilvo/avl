@@ -4,14 +4,14 @@ Every row in the email comes straight from the `AG Stock Movements` register. No
 generated. Standard connectors only (SharePoint, Office 365 Outlook).
 
 The email has:
-1. **Stock used today:** time, worker, AVL ID, item, qty, store, job / order number, and the pack it was
+1. **Stock used in the last 24 hours (3 pm yesterday to 3 pm today):** time, worker, AVL ID, item, qty, store, job / order number, and the pack it was
    used with (e.g. the bag, liner, seal, ties and label used with a 200 L drum). Undone takes are left out.
-2. **Stock in / counts / transfers today:** Peter's receipts, stocktake counts and transfers.
+2. **Stock in / counts / transfers in the same 24 hours:** Peter's receipts, stocktake counts and transfers.
 3. **Items currently low or critical:** taken from the alert flow's `AlertNotifiedLevel`.
 
 ## Build (Power Automate → Create → Scheduled cloud flow)
 
-Name: **AG Supplies - Daily usage report** · Repeat every **1 Day** · At **4:45 PM** · Time zone
+Name: **AG Supplies - Daily usage report** · Repeat every **1 Day** · At **3:00 PM** · Time zone
 **(UTC+10:00) Canberra, Melbourne, Sydney** · On these days: Mon–Sat (adjust to the roster).
 
 ### 1. Compose — rename to `Today`
@@ -21,7 +21,9 @@ formatDateTime(convertFromUtc(utcNow(),'AUS Eastern Standard Time'),'yyyy-MM-dd'
 
 ### 2. SharePoint — *Get items* — rename to `GetMoves`
 - List: `AG Stock Movements`
-- Filter Query: `MovementDay eq '@{outputs('Today')}'`
+- Filter Query: `MovementDate ge '@{addHours(utcNow(),if(equals(dayOfWeek(convertFromUtc(utcNow(),'AUS Eastern Standard Time')),1),-48,-24))}'`
+  (everything since the previous 3 pm report: 24 hours, or 48 hours on Monday so Saturday afternoon and
+  Sunday are included. Takes made after 3 pm show in the next report, so nothing is missed.)
 - Order By: `MovementDate asc`
 - Top Count: `5000` · Settings → Pagination **On**, threshold `5000`
 
@@ -38,7 +40,7 @@ formatDateTime(convertFromUtc(utcNow(),'AUS Eastern Standard Time'),'yyyy-MM-dd'
 
 | Key | Value (expression) |
 |---|---|
-| Time | `convertFromUtc(item()?['MovementDate'],'AUS Eastern Standard Time','HH:mm')` |
+| Time | `convertFromUtc(item()?['MovementDate'],'AUS Eastern Standard Time','ddd HH:mm')` |
 | Worker | `item()?['WorkerName']` |
 | AVL ID | `item()?['WorkerAVLID']` |
 | Item | `item()?['ItemName']` |
@@ -60,7 +62,7 @@ formatDateTime(convertFromUtc(utcNow(),'AUS Eastern Standard Time'),'yyyy-MM-dd'
 ### 7. Select — rename to `InOutRows`
 | Key | Value |
 |---|---|
-| Time | `convertFromUtc(item()?['MovementDate'],'AUS Eastern Standard Time','HH:mm')` |
+| Time | `convertFromUtc(item()?['MovementDate'],'AUS Eastern Standard Time','ddd HH:mm')` |
 | Type | `item()?['MovementType']` |
 | Item | `item()?['ItemName']` |
 | Qty | `item()?['Qty']` |
@@ -95,8 +97,8 @@ From: `body('GetLow')?['value']`
 
 ```html
 <style>table{border-collapse:collapse;font-family:Segoe UI,Arial;font-size:13px}th{background:#005e38;color:#fff;padding:4px 8px;text-align:left}td{border:1px solid #ccc;padding:4px 8px}</style>
-<h3>Stock used today (@{outputs('Today')})</h3>
-@{if(equals(length(body('Used')),0),'<p>No stock was taken today.</p>',body('UsedTable'))}
+<h3>Stock used - 3 pm yesterday to 3 pm today (@{outputs('Today')})</h3>
+@{if(equals(length(body('Used')),0),'<p>No stock was taken in the last 24 hours.</p>',body('UsedTable'))}
 <h3>Stock in, counts and transfers</h3>
 @{if(equals(length(body('InOut')),0),'<p>None.</p>',body('InOutTable'))}
 <h3>Items currently low (20% or less) or critical (10% or less)</h3>
