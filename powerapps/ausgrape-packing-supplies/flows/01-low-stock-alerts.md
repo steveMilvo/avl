@@ -68,7 +68,6 @@ if(equals(coalesce(triggerBody()?['AlertNotifiedLevel'],'OK'),'Critical'),2,if(e
 **Case `Critical` (10% or less): second notification, Teams.** Microsoft Teams — *Post message in a chat or channel*
 - Post as: **Flow bot** · Post in: **Chat with Flow bot** · Recipient: `pmanovic@avlwines.com.au`
 - Message: `🔴 CRITICAL - @{triggerBody()?['Title']} is at @{formatNumber(outputs('Pct'),'0')}% (@{triggerBody()?['OnHand']} left of @{triggerBody()?['ParLevel']}: BHW @{triggerBody()?['OnHandBHW']}, HQ2 @{triggerBody()?['OnHandHQ2']}). Order now.`
-- To post to a team channel instead, choose Post in: **Channel** and pick the team and channel.
 
 ### 4. SharePoint — *Update item* (after the condition, not inside it)
 - List: `AG Stock Items` · Id: `triggerBody()?['ID']`

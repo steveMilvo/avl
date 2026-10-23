@@ -105,11 +105,11 @@ All four lists have version history turned on, so every edit is kept.
 | Draft recipes (fibre drum, cardboard IBC) | Left switched off until Peter turns them on in `AG Pack Recipes` |
 | SharePoint site | https://australianvintagecomau.sharepoint.com/sites/AustralianVintage |
 | Manager name | Peter Manovic |
+| Teams alert (10%) | Teams chat to pmanovic@avlwines.com.au (same address as the email) |
 
 ## Still needed before go-live
 
 1. Peter's AVL ID. His email (pmanovic@avlwines.com.au) is set; until the ID arrives he is loaded with AVL ID `TBC-PMANOVIC`. Manager access works by email, but correct his row in `AG Supply Members` before he logs takes.
 2. Staff list: name, AVL ID, work email for each AusGrape worker.
-3. Teams alert destination: Peter's chat with Flow bot (default) or a team channel.
-4. Full stock level for each item. These are seeded from the 31/08 count; items that were 0 have no alerts until set.
-5. Daily report time: 4:45 pm Mon–Sat unless changed.
+3. Full stock level for each item. These are seeded from the 31/08 count; items that were 0 have no alerts until set.
+4. Daily report time: 4:45 pm Mon–Sat unless changed.
