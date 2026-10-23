@@ -1,0 +1,178 @@
+# Paste onto the blank screen scrLevels. Lowest stock (as % of full level) is listed first.
+- hdrLevels:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Stock levels"
+      X: |-
+        =0
+      Y: |-
+        =0
+      Width: |-
+        =Parent.Width
+      Height: |-
+        =90
+      Fill: |-
+        =varGreen
+      Color: |-
+        =White
+      Size: |-
+        =22
+      FontWeight: |-
+        =FontWeight.Bold
+      Align: |-
+        =Align.Center
+- btnLevelsBack:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="‹ Home"
+      OnSelect: |-
+        =Navigate(scrHome, ScreenTransition.UnCover)
+      X: |-
+        =10
+      Y: |-
+        =20
+      Width: |-
+        =120
+      Height: |-
+        =50
+      Fill: |-
+        =Transparent
+      Color: |-
+        =White
+      BorderThickness: |-
+        =0
+      Size: |-
+        =16
+- txtFind:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =""
+      HintText: |-
+        ="Search item or section"
+      X: |-
+        =20
+      Y: |-
+        =100
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =56
+      Size: |-
+        =16
+- galLevels:
+    Control: Gallery
+    Variant: Vertical
+    Properties:
+      Items: |-
+        =Sort(
+            AddColumns(
+                Filter(colItems, IsBlank(Trim(txtFind.Text)) || Trim(txtFind.Text) in Title || Trim(txtFind.Text) in Section),
+                Pct, If(ParLevel > 0, OnHand / ParLevel, Blank())),
+            Coalesce(Pct, 99))
+      TemplateSize: |-
+        =96
+      X: |-
+        =0
+      Y: |-
+        =166
+      Width: |-
+        =Parent.Width
+      Height: |-
+        =Parent.Height - 166 - If(varIsManager, 110, 0)
+    Children:
+      - lblLvlName:
+          Control: Label
+          Properties:
+            Text: |-
+              =ThisItem.Title
+            X: |-
+              =20
+            Y: |-
+              =6
+            Width: |-
+              =Parent.TemplateWidth - 170
+            Height: |-
+              =36
+            Size: |-
+              =15
+            FontWeight: |-
+              =FontWeight.Semibold
+      - lblLvlDetail:
+          Control: Label
+          Properties:
+            Text: |-
+              =ThisItem.Section & "  ·  BHW " & ThisItem.OnHandBHW & "  ·  HQ2 " & ThisItem.OnHandHQ2 & "  ·  Full " & ThisItem.ParLevel
+            X: |-
+              =20
+            Y: |-
+              =44
+            Width: |-
+              =Parent.TemplateWidth - 170
+            Height: |-
+              =40
+            Size: |-
+              =12
+            Color: |-
+              =RGBA(90, 90, 90, 1)
+      - lblLvlPct:
+          Control: Label
+          Properties:
+            Text: |-
+              =ThisItem.OnHand & If(IsBlank(ThisItem.Pct), "", Char(10) & Text(ThisItem.Pct, "0%"))
+            Align: |-
+              =Align.Center
+            X: |-
+              =Parent.TemplateWidth - 140
+            Y: |-
+              =8
+            Width: |-
+              =120
+            Height: |-
+              =78
+            Size: |-
+              =15
+            FontWeight: |-
+              =FontWeight.Bold
+            Color: |-
+              =White
+            Fill: |-
+              =If(IsBlank(ThisItem.Pct), RGBA(140, 140, 140, 1),
+                  ThisItem.Pct <= 0.1, varRed,
+                  ThisItem.Pct <= 0.2, varAmber,
+                  varGreen)
+- btnRebuild:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        =If(varConfirmRebuild, "TAP AGAIN to rebuild all balances", "Rebuild balances from register")
+      Visible: |-
+        =varIsManager
+      X: |-
+        =20
+      Y: |-
+        =Parent.Height - 100
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =84
+      Fill: |-
+        =If(varConfirmRebuild, varRed, RGBA(0, 70, 140, 1))
+      Size: |-
+        =16
+      OnSelect: |-
+        =If(!varConfirmRebuild,
+            Set(varConfirmRebuild, true),
+            Set(varConfirmRebuild, false);
+            IfError(
+              ForAll(colItems As i,
+                With({mv: Filter('AG Stock Movements', ItemCode = i.ItemCode)},
+                  With({b: Sum(Filter(mv, Location = "BHW"), QtyChange),
+                        h: Sum(Filter(mv, Location = "HQ2"), QtyChange)},
+                    Patch('AG Stock Items', LookUp('AG Stock Items', ItemCode = i.ItemCode),
+                      {OnHandBHW: Coalesce(b, 0), OnHandHQ2: Coalesce(h, 0), OnHand: Coalesce(b, 0) + Coalesce(h, 0)})))),
+              Notify("Rebuild failed: " & FirstError.Message, NotificationType.Error),
+              ClearCollect(colItems, Filter('AG Stock Items', Active = true));
+              Notify("Balances rebuilt from the register.", NotificationType.Success)))

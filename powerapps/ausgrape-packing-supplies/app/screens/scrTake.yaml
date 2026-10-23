@@ -1,0 +1,554 @@
+# Paste onto the blank screen scrTake. Set scrTake.OnVisible separately - see App.fx.md.
+# Step 1: worker taps a SECTION button (one per section of the stocktake sheet).
+# Step 2: worker picks the ITEM from the drop-down, enters qty, location and job / order number.
+#         If the item is a pack (e.g. 220L steel drum) the supplies it uses are listed and pre-filled
+#         (qty x per-pack) - the worker can change the bag type or quantity before saving.
+- hdrTake:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Take stock"
+      X: |-
+        =0
+      Y: |-
+        =0
+      Width: |-
+        =Parent.Width
+      Height: |-
+        =90
+      Fill: |-
+        =varGreen
+      Color: |-
+        =White
+      Size: |-
+        =22
+      FontWeight: |-
+        =FontWeight.Bold
+      Align: |-
+        =Align.Center
+- btnTakeBack:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="‹ Home"
+      OnSelect: |-
+        =Navigate(scrHome, ScreenTransition.UnCover)
+      X: |-
+        =10
+      Y: |-
+        =20
+      Width: |-
+        =120
+      Height: |-
+        =50
+      Fill: |-
+        =Transparent
+      Color: |-
+        =White
+      BorderThickness: |-
+        =0
+      Size: |-
+        =16
+- lblAVL:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Your AVL ID"
+      X: |-
+        =20
+      Y: |-
+        =100
+      Width: |-
+        =190
+      Height: |-
+        =56
+      Size: |-
+        =16
+      FontWeight: |-
+        =FontWeight.Semibold
+- txtAVL:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =varMe.AVLID
+      HintText: |-
+        ="AVL ID"
+      X: |-
+        =220
+      Y: |-
+        =100
+      Width: |-
+        =400
+      Height: |-
+        =56
+      Size: |-
+        =18
+- lblWho:
+    Control: Label
+    Properties:
+      Text: |-
+        =With({w: LookUp('AG Supply Members', AVLID = Trim(txtAVL.Text) && Active = true)},
+            If(IsBlank(Trim(txtAVL.Text)), "Enter your AVL ID",
+               IsBlank(w), "AVL ID not found - ask Peter to add you",
+               "Taking as: " & w.Title))
+      Color: |-
+        =If(IsBlank(LookUp('AG Supply Members', AVLID = Trim(txtAVL.Text) && Active = true)), varRed, varGreen)
+      X: |-
+        =20
+      Y: |-
+        =160
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =40
+      Size: |-
+        =14
+- lblPickSection:
+    Control: Label
+    Properties:
+      Text: |-
+        ="1. Tap the section"
+      Visible: |-
+        =IsBlank(varSection)
+      X: |-
+        =20
+      Y: |-
+        =205
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =40
+      Size: |-
+        =17
+      FontWeight: |-
+        =FontWeight.Semibold
+- galSections:
+    Control: Gallery
+    Variant: Vertical
+    Properties:
+      Items: |-
+        =colSections
+      Visible: |-
+        =IsBlank(varSection)
+      WrapCount: |-
+        =2
+      TemplateSize: |-
+        =84
+      TemplatePadding: |-
+        =6
+      X: |-
+        =14
+      Y: |-
+        =250
+      Width: |-
+        =Parent.Width - 28
+      Height: |-
+        =Parent.Height - 270
+    Children:
+      - btnSection:
+          Control: Classic/Button
+          Properties:
+            Text: |-
+              =ThisItem.Section
+            OnSelect: |-
+              =Set(varSection, ThisItem.Section);
+              Set(varItem, Blank());
+              Reset(ddItem);
+              Clear(colBom)
+            X: |-
+              =0
+            Y: |-
+              =0
+            Width: |-
+              =Parent.TemplateWidth - 12
+            Height: |-
+              =Parent.TemplateHeight - 12
+            Fill: |-
+              =varGreen
+            Size: |-
+              =16
+- btnSectionChip:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        =varSection & "   (tap to change section)"
+      OnSelect: |-
+        =Set(varSection, Blank());
+        Set(varItem, Blank());
+        Reset(ddItem);
+        Clear(colBom)
+      Visible: |-
+        =!IsBlank(varSection)
+      X: |-
+        =20
+      Y: |-
+        =205
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =56
+      Fill: |-
+        =RGBA(225, 240, 230, 1)
+      Color: |-
+        =varGreen
+      Size: |-
+        =16
+- lblItem:
+    Control: Label
+    Properties:
+      Text: |-
+        ="2. Item taken"
+      Visible: |-
+        =!IsBlank(varSection)
+      X: |-
+        =20
+      Y: |-
+        =268
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =34
+      Size: |-
+        =15
+      FontWeight: |-
+        =FontWeight.Semibold
+- ddItem:
+    Control: Classic/DropDown
+    Properties:
+      Items: |-
+        =ForAll(Sort(Filter(colItems, Section = varSection), Title) As i, {Value: i.Title})
+      AllowEmptySelection: |-
+        =true
+      Default: |-
+        =""
+      OnChange: |-
+        =Set(varItem, LookUp(colItems, Title = ddItem.Selected.Value));
+        ClearCollect(colBom,
+            ForAll(Filter('AG Pack Recipes', PackItemCode = varItem.ItemCode && Active = true) As r,
+                {ComponentCode: r.ComponentCode,
+                 AltComponentCode: r.AltComponentCode,
+                 QtyPerPack: r.QtyPerPack,
+                 CompName: LookUp(colItems, ItemCode = r.ComponentCode).Title,
+                 AltName: LookUp(colItems, ItemCode = r.AltComponentCode).Title}))
+      Visible: |-
+        =!IsBlank(varSection)
+      X: |-
+        =20
+      Y: |-
+        =302
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =56
+      Size: |-
+        =16
+- lblQty:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Quantity"
+      Visible: |-
+        =!IsBlank(varSection)
+      X: |-
+        =20
+      Y: |-
+        =366
+      Width: |-
+        =180
+      Height: |-
+        =34
+      Size: |-
+        =15
+      FontWeight: |-
+        =FontWeight.Semibold
+- txtQty:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =""
+      Format: |-
+        =TextFormat.Number
+      HintText: |-
+        ="e.g. 24"
+      Visible: |-
+        =!IsBlank(varSection)
+      X: |-
+        =20
+      Y: |-
+        =400
+      Width: |-
+        =180
+      Height: |-
+        =56
+      Size: |-
+        =18
+- lblLoc:
+    Control: Label
+    Properties:
+      Text: |-
+        ="From store"
+      Visible: |-
+        =!IsBlank(varSection)
+      X: |-
+        =215
+      Y: |-
+        =366
+      Width: |-
+        =180
+      Height: |-
+        =34
+      Size: |-
+        =15
+      FontWeight: |-
+        =FontWeight.Semibold
+- ddLoc:
+    Control: Classic/DropDown
+    Properties:
+      Items: |-
+        =varLocations
+      Default: |-
+        ="BHW"
+      Visible: |-
+        =!IsBlank(varSection)
+      X: |-
+        =215
+      Y: |-
+        =400
+      Width: |-
+        =180
+      Height: |-
+        =56
+      Size: |-
+        =16
+- lblOnHand:
+    Control: Label
+    Properties:
+      Text: |-
+        =If(IsBlank(varItem), "",
+            "On hand " & ddLoc.Selected.Value & ": " &
+            Text(If(ddLoc.Selected.Value = "BHW", varItem.OnHandBHW, varItem.OnHandHQ2)))
+      Color: |-
+        =If(!IsBlank(varItem) && Value(txtQty.Text) > If(ddLoc.Selected.Value = "BHW", varItem.OnHandBHW, varItem.OnHandHQ2), varRed, RGBA(60, 60, 60, 1))
+      Visible: |-
+        =!IsBlank(varSection)
+      X: |-
+        =410
+      Y: |-
+        =400
+      Width: |-
+        =Parent.Width - 425
+      Height: |-
+        =56
+      Size: |-
+        =13
+- lblJob:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Job / order number (if any)"
+      Visible: |-
+        =!IsBlank(varSection)
+      X: |-
+        =20
+      Y: |-
+        =464
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =34
+      Size: |-
+        =15
+      FontWeight: |-
+        =FontWeight.Semibold
+- txtJob:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =""
+      HintText: |-
+        ="e.g. BX6295-BJWS or PO number"
+      Visible: |-
+        =!IsBlank(varSection)
+      X: |-
+        =20
+      Y: |-
+        =498
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =56
+      Size: |-
+        =16
+- lblBom:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Also used with this pack (change bag type or qty if different):"
+      Visible: |-
+        =!IsBlank(varSection) && !IsEmpty(colBom)
+      X: |-
+        =20
+      Y: |-
+        =562
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =34
+      Size: |-
+        =13
+      FontWeight: |-
+        =FontWeight.Semibold
+      Color: |-
+        =varGreen
+- galBom:
+    Control: Gallery
+    Variant: Vertical
+    Properties:
+      Items: |-
+        =colBom
+      Visible: |-
+        =!IsBlank(varSection) && !IsEmpty(colBom)
+      TemplateSize: |-
+        =64
+      TemplatePadding: |-
+        =2
+      X: |-
+        =14
+      Y: |-
+        =598
+      Width: |-
+        =Parent.Width - 28
+      Height: |-
+        =330
+    Children:
+      - ddBomItem:
+          Control: Classic/DropDown
+          Properties:
+            Items: |-
+              =Filter(Table({Value: ThisItem.CompName}, {Value: ThisItem.AltName}), !IsBlank(Value))
+            Default: |-
+              =ThisItem.CompName
+            X: |-
+              =6
+            Y: |-
+              =4
+            Width: |-
+              =Parent.TemplateWidth - 180
+            Height: |-
+              =54
+            Size: |-
+              =13
+      - txtBomQty:
+          Control: Classic/TextInput
+          Properties:
+            Default: |-
+              =Text(ThisItem.QtyPerPack * Value(txtQty.Text))
+            Format: |-
+              =TextFormat.Number
+            X: |-
+              =Parent.TemplateWidth - 165
+            Y: |-
+              =4
+            Width: |-
+              =150
+            Height: |-
+              =54
+            Size: |-
+              =16
+- txtNote:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =""
+      HintText: |-
+        ="Note (optional) - tap the mic on the keyboard to dictate"
+      Mode: |-
+        =TextMode.MultiLine
+      Visible: |-
+        =!IsBlank(varSection)
+      X: |-
+        =20
+      Y: |-
+        =934
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =66
+      Size: |-
+        =14
+- btnTakeSave:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="SAVE - I TOOK THIS"
+      DisplayMode: |-
+        =If(IsBlank(varItem) || Value(txtQty.Text) <= 0, DisplayMode.Disabled, DisplayMode.Edit)
+      Visible: |-
+        =!IsBlank(varSection)
+      X: |-
+        =20
+      Y: |-
+        =1012
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =100
+      Fill: |-
+        =varGreen
+      Size: |-
+        =20
+      OnSelect: |-
+        =With({w: LookUp('AG Supply Members', AVLID = Trim(txtAVL.Text) && Active = true),
+               q: Value(txtQty.Text),
+               loc: ddLoc.Selected.Value,
+               job: Upper(Trim(txtJob.Text))},
+          If(
+            IsBlank(w), Notify("Enter a valid AVL ID. Ask Peter to add you if you are not set up.", NotificationType.Error),
+            IsBlank(varItem), Notify("Choose the item you took.", NotificationType.Error),
+            IsBlank(q) || q <= 0, Notify("Enter the quantity you took.", NotificationType.Error),
+            Set(varTxn, Text(Now(), "yyyymmdd-hhmmss") & "-" & w.AVLID);
+            ClearCollect(colTake, {Code: varItem.ItemCode, Qty: q, Kind: "Use", Parent: ""});
+            Collect(colTake,
+                ForAll(Filter(galBom.AllItems, Value(txtBomQty.Text) > 0),
+                    {Code: LookUp(colItems, Title = ddBomItem.Selected.Value).ItemCode,
+                     Qty: Value(txtBomQty.Text),
+                     Kind: "Use - with pack",
+                     Parent: varItem.ItemCode}));
+            IfError(
+              ForAll(colTake As t,
+                With({it: LookUp('AG Stock Items', ItemCode = t.Code)},
+                  With({bhw: it.OnHandBHW - If(loc = "BHW", t.Qty, 0),
+                        hq2: it.OnHandHQ2 - If(loc = "HQ2", t.Qty, 0)},
+                    Patch('AG Stock Items', it, {OnHandBHW: bhw, OnHandHQ2: hq2, OnHand: bhw + hq2});
+                    Patch('AG Stock Movements', Defaults('AG Stock Movements'),
+                      {Title: varTxn & "-" & t.Code,
+                       MovementDate: Now(),
+                       MovementDay: Text(Today(), "yyyy-mm-dd"),
+                       MovementType: t.Kind,
+                       ItemCode: t.Code,
+                       ItemName: it.Title,
+                       Section: it.Section,
+                       Qty: t.Qty,
+                       QtyChange: -t.Qty,
+                       Location: loc,
+                       BalanceAfter: bhw + hq2,
+                       JobNumber: job,
+                       TransactionID: varTxn,
+                       PackItemCode: t.Parent,
+                       WorkerName: w.Title,
+                       WorkerEmail: w.Email,
+                       WorkerAVLID: w.AVLID,
+                       RecordedByEmail: Lower(User().Email),
+                       Reversed: false,
+                       Notes: txtNote.Text})))),
+              Notify("NOT saved: " & FirstError.Message & ". Try again or tell Peter.", NotificationType.Error),
+              Notify("Saved: " & q & " x " & varItem.Title & If(CountRows(colTake) > 1, " + " & (CountRows(colTake) - 1) & " supplies", "") & If(job <> "", " for " & job, ""), NotificationType.Success);
+              ClearCollect(colItems, Filter('AG Stock Items', Active = true));
+              Set(varItem, Blank());
+              Reset(ddItem);
+              Reset(txtQty);
+              Reset(txtNote);
+              Clear(colBom)
+            )
+          )
+        )

@@ -1,0 +1,19 @@
+# Tile for the Buronga AVL app nest (main board).
+# Open the main board app in Studio, select its home screen, paste, then move the button into the tile grid
+# and copy the size and colours of the existing tiles.
+# Replace <appId> after publishing. For AVL the environment ID equals the tenant ID (see the skill notes).
+- btnTileAGSupplies:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="AusGrape Packing Supplies"
+      OnSelect: |-
+        =Launch("https://apps.powerapps.com/play/e/<envId>/a/<appId>?tenantId=<tenantId>", {}, LaunchTarget.Replace)
+      Width: |-
+        =280
+      Height: |-
+        =140
+      Fill: |-
+        =RGBA(0, 94, 56, 1)
+      Size: |-
+        =16

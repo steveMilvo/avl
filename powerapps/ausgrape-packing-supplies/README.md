@@ -1,0 +1,115 @@
+# AusGrape Packing Supplies — Power Apps build pack
+
+A phone app that tracks AusGrape packing supplies at Buronga. Built to the AVL SharePoint + Power Apps
+method (`sharepoint-powerapps-builder` skill). It replaces the month-end manual count and the daily
+paperwork.
+
+- **Peter Manovic (manager)** enters all incoming stock (deliveries, stocktake counts, transfers between
+  BHW and HQ2). Staff never see this screen.
+- **Every AusGrape worker** marks off stock as they take it from storage: a **button for each section**
+  of the stocktake sheet, then a **drop-down for the item**, quantity, store and **job / order number**.
+  Each take is recorded against their **AVL ID**, name and time.
+- **Pack items use up their supplies automatically.** Taking a 200 L steel drum also takes 1 × aseptic bag
+  (Scholle 802955, or Hansin MB6071 if that's the one used), 1 × 60 micron liner, cable ties, 1 × PP
+  seal and 1 × label. The worker can change the bag type or quantity before saving.
+- **One central register** (`AG Stock Movements` SharePoint list) holds every movement. It opens in
+  Excel in one click.
+- **Alerts:** email to Peter when an item hits **20%**. A **Teams** message (plus email) when it hits
+  **10% or less**.
+- **Daily report** to Peter: stock used, who used it, the time and the job / order number.
+- **Main board:** a tile for the Buronga AVL app nest.
+
+## What's in this folder
+
+| Path | What it is |
+|---|---|
+| `sharepoint/provision-lists.js` | Creates the 4 SharePoint lists, indexes, unique keys and versioning, and seeds 61 stock items in 12 sections plus the drum pack recipe. Run it in the browser console on the site. Safe to re-run. |
+| `app/App.fx.md` | App OnStart, each screen's OnVisible, and design notes. |
+| `app/screens/*.yaml` | Controls for each screen, ready to paste in Power Apps Studio. |
+| `app/main-board-tile.yaml` | Launch button for the Buronga AVL main board app. |
+| `flows/01-low-stock-alerts.md` | Power Automate: 20% email, 10% Teams. |
+| `flows/02-daily-usage-report.md` | Power Automate: daily usage email to Peter. |
+
+## Data model (SharePoint lists)
+
+| List | One row per | Key columns |
+|---|---|---|
+| **AG Stock Items** | stock item | Item (Title, unique), ItemCode (unique), Section, SectionOrder, SupplierCode, Unit, OnHandBHW, OnHandHQ2, OnHand, ParLevel (= 100% "full stock level"), AlertNotifiedLevel, Active |
+| **AG Stock Movements** — *the central register* | movement | Movement ID (unique), MovementDate, MovementDay, MovementType (Use · Use - with pack · Receipt · Stocktake count · Transfer out/in · Undo), ItemCode, ItemName, Qty, QtyChange (±), Location, BalanceAfter, JobNumber, TransactionID, PackItemCode, WorkerName, WorkerEmail, WorkerAVLID, RecordedByEmail, Supplier, DocketNo, Reversed, ReversalOf, Notes |
+| **AG Pack Recipes** | pack + component | Recipe key (unique), PackItemCode, ComponentCode, AltComponentCode, QtyPerPack, Active |
+| **AG Supply Members** | person | Name (Title), AVLID (unique), Email (unique, lower case), SupplyRole (Manager / Staff), Active |
+
+All four lists have version history turned on, so every edit is kept.
+
+## Screens
+
+| Screen | Who | Does |
+|---|---|---|
+| Home | all | Take stock · Today's takes / undo · Stock levels · *(Manager)* Receive / Count / Transfer |
+| Take stock | all | AVL ID → section button → item drop-down → qty, store (BHW / HQ2), job / order no. → pack supplies pre-filled → **Save** |
+| Today's takes | all | Your takes today. **Undo this take** reverses the whole take (drum + supplies). The original rows stay in the register, marked Reversed. |
+| Stock levels | all | Every item, lowest % first, coloured green / amber (≤20%) / red (≤10%). Manager: *Rebuild balances from register*. |
+| Manager – stock in | **Peter only** | Receive delivery (supplier, docket) · Stocktake count · Transfer between stores · set Full stock level |
+
+## Build steps
+
+1. **Lists:** open the SharePoint site → DevTools console → paste `sharepoint/provision-lists.js` (first
+   fill in Peter's email and AVL ID in `CONFIG`). Check the summary: 61 items, 15 recipe rows.
+2. **App:** Power Apps → Create → Blank canvas app → **Phone** → name *AusGrape Packing Supplies*. Add the
+   4 lists as SharePoint data sources. Settings → Data row limit = 2000.
+3. Paste `App.OnStart` from `App.fx.md`. Create the 5 blank screens (`scrHome`, `scrTake`,
+   `scrMyTakes`, `scrLevels`, `scrReceive`), rename them, and paste each YAML file onto its screen. Set
+   each OnVisible from `App.fx.md`. Set StartScreen = `scrHome`.
+4. App checker → Recheck all → zero errors. Delegation warnings on *Rebuild balances* are expected
+   (each item's history up to 2000 rows).
+5. Test with rows marked "TEST - delete me": take a drum with supplies, undo it, receive, count,
+   transfer. Check the register rows over REST or in the list, then recycle the test rows.
+6. **Flows:** build `flows/01` and `flows/02`, then test them.
+7. **Publish** and share the app with the AusGrape staff group. Add the tile to the main board
+   (`app/main-board-tile.yaml`) with the play link.
+8. **Go-live count:** OnHand starts at **0**. On day 1 Peter does one count of each item with *Stocktake
+   count* (BHW and HQ2). From then on the app keeps the balance and the month-end count isn't needed.
+   A spot check now and then is still sensible.
+
+## Where the data is, and how to see it
+
+| What | Where |
+|---|---|
+| Central movement register | `<site>/Lists/AG%20Stock%20Movements` — sort or filter by day, worker, job or item. **Export → Export to Excel** gives a live-refreshing spreadsheet. |
+| Current stock | `<site>/Lists/AG%20Stock%20Items` (or the Stock levels screen) |
+| Pack recipes | `<site>/Lists/AG%20Pack%20Recipes` — Peter edits these in grid view. |
+| Who can use the app | `<site>/Lists/AG%20Supply%20Members` |
+| Change history of any row | the row's `…` menu → Version history |
+
+## Things to know
+
+- **Who is recorded on a take.** The app records the AVL ID typed on the Take screen. It is pre-filled
+  with the signed-in person's ID. This works on shared site phones, and the phone's login is also stored
+  in RecordedByEmail.
+- **Staff can't reach the manager screen in the app.** Staff do need edit rights on the lists so their
+  takes can save, though, which means they could edit a list directly in SharePoint. Every edit is kept
+  in version history and named. To lock it down further, IT can hide the lists from site navigation, or
+  route writes through a flow. Ask if you want that.
+- **Two people saving at the same second** can, rarely, both read the same balance. The register stays
+  correct either way, and *Rebuild balances from register* fixes the totals from it.
+- Only the BHW and HQ2 stores are tracked. A third store (e.g. PTG) would need one extra column.
+
+## Questions for Peter before go-live
+
+1. **Cable ties per drum.** The recipe assumes 1. Confirm the real number. Also confirm the label (1 blank
+   sticker per drum) and whether drum pallets (VIP RED) should come off automatically (e.g. 1 per 4
+   drums).
+2. **Bag per drum.** The Packaging Request Form says Scholle 802955. The product spec (option 1) says Hansin
+   MB6071. Both are offered in the app. Which should be the default?
+3. **Full stock levels.** These were seeded from the 31/08/2026 count, so each item's 20% / 10% alert is
+   measured against that count. Set the real "full" level for each item; an item set to 0 never alerts.
+   Items that were 0 at that count currently have no alerts.
+4. **31/08 sheet discrepancies.** The Total column doesn't match BHW + HQ2 for 1000L Cardboard IBC (157 vs
+   544), Scholle 200L #802955 (635 vs 225), Hansin 1400L (926 vs 320), Hansin 20L (1490 vs 4320) and
+   Pallecons (3 vs 6). The go-live count will settle these.
+5. **Draft recipes.** Fibre drum (tech screws, staples) and 1000 L cardboard IBC (bag, PW liner, strapping
+   clamps) are loaded but switched **off**. Confirm the quantities and switch them on.
+6. **Contacts.** Peter's work email and AVL ID, the staff list (name, AVL ID, email), and whether the Teams
+   alert goes to Peter's chat or a team channel.
+7. **Report time.** The daily report goes at 4:45 pm Mon–Sat. Change if needed.
+8. **Name spelling.** The brief says "Manovik"; the AusGrape forms say "Manovic". The pack uses Manovic.

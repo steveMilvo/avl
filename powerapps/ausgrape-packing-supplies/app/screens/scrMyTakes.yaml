@@ -1,0 +1,196 @@
+# Paste onto the blank screen scrMyTakes. Today's movements for one AVL ID (manager can show everyone).
+# "Undo this take" reverses the whole take (e.g. the drum AND the bag, liner, seal, ties and label used with it).
+# The original rows stay in the register marked Reversed, and an "Undo" row is added, so nothing is lost.
+- hdrMine:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Today's takes"
+      X: |-
+        =0
+      Y: |-
+        =0
+      Width: |-
+        =Parent.Width
+      Height: |-
+        =90
+      Fill: |-
+        =varGreen
+      Color: |-
+        =White
+      Size: |-
+        =22
+      FontWeight: |-
+        =FontWeight.Bold
+      Align: |-
+        =Align.Center
+- btnMineBack:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="‹ Home"
+      OnSelect: |-
+        =Navigate(scrHome, ScreenTransition.UnCover)
+      X: |-
+        =10
+      Y: |-
+        =20
+      Width: |-
+        =120
+      Height: |-
+        =50
+      Fill: |-
+        =Transparent
+      Color: |-
+        =White
+      BorderThickness: |-
+        =0
+      Size: |-
+        =16
+- txtLogAVL:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =varMe.AVLID
+      HintText: |-
+        ="Your AVL ID"
+      X: |-
+        =20
+      Y: |-
+        =100
+      Width: |-
+        =300
+      Height: |-
+        =56
+      Size: |-
+        =18
+- tglAll:
+    Control: Classic/Toggle
+    Properties:
+      Default: |-
+        =false
+      TrueText: |-
+        ="All workers"
+      FalseText: |-
+        ="Just this ID"
+      Visible: |-
+        =varIsManager
+      X: |-
+        =340
+      Y: |-
+        =100
+      Width: |-
+        =280
+      Height: |-
+        =56
+- galMine:
+    Control: Gallery
+    Variant: Vertical
+    Properties:
+      Items: |-
+        =If(varIsManager && tglAll.Value,
+            Sort(Filter('AG Stock Movements', MovementDay = Text(Today(), "yyyy-mm-dd")), MovementDate, SortOrder.Descending),
+            Sort(Filter('AG Stock Movements', MovementDay = Text(Today(), "yyyy-mm-dd") && WorkerAVLID = Trim(txtLogAVL.Text)), MovementDate, SortOrder.Descending))
+      TemplateSize: |-
+        =120
+      X: |-
+        =0
+      Y: |-
+        =166
+      Width: |-
+        =Parent.Width
+      Height: |-
+        =Parent.Height - 166
+    Children:
+      - lblMineLine1:
+          Control: Label
+          Properties:
+            Text: |-
+              =Text(ThisItem.MovementDate, "hh:mm") & "   " & Text(ThisItem.QtyChange) & " x " & ThisItem.ItemName
+            Color: |-
+              =If(ThisItem.Reversed, RGBA(150, 150, 150, 1), RGBA(20, 20, 20, 1))
+            X: |-
+              =20
+            Y: |-
+              =6
+            Width: |-
+              =Parent.TemplateWidth - 40
+            Height: |-
+              =38
+            Size: |-
+              =15
+            FontWeight: |-
+              =FontWeight.Semibold
+      - lblMineLine2:
+          Control: Label
+          Properties:
+            Text: |-
+              =ThisItem.MovementType & "  ·  " & ThisItem.Location & "  ·  " & ThisItem.WorkerName &
+              If(IsBlank(ThisItem.JobNumber), "", "  ·  Job " & ThisItem.JobNumber) &
+              If(ThisItem.Reversed && ThisItem.MovementType <> "Undo", "  ·  UNDONE", "")
+            X: |-
+              =20
+            Y: |-
+              =44
+            Width: |-
+              =Parent.TemplateWidth - 220
+            Height: |-
+              =66
+            Size: |-
+              =12
+            Color: |-
+              =RGBA(90, 90, 90, 1)
+      - btnUndo:
+          Control: Classic/Button
+          Properties:
+            Text: |-
+              ="Undo this take"
+            Visible: |-
+              =ThisItem.MovementType = "Use" && !ThisItem.Reversed
+            X: |-
+              =Parent.TemplateWidth - 190
+            Y: |-
+              =50
+            Width: |-
+              =170
+            Height: |-
+              =56
+            Fill: |-
+              =varRed
+            Size: |-
+              =13
+            OnSelect: |-
+              =ClearCollect(colUndo, Filter('AG Stock Movements', TransactionID = ThisItem.TransactionID && Reversed = false));
+              IfError(
+                ForAll(colUndo As m,
+                  With({it: LookUp('AG Stock Items', ItemCode = m.ItemCode)},
+                    With({nb: it.OnHandBHW - If(m.Location = "BHW", m.QtyChange, 0),
+                          nh: it.OnHandHQ2 - If(m.Location = "HQ2", m.QtyChange, 0)},
+                      Patch('AG Stock Items', it, {OnHandBHW: nb, OnHandHQ2: nh, OnHand: nb + nh});
+                      Patch('AG Stock Movements', LookUp('AG Stock Movements', ID = m.ID), {Reversed: true});
+                      Patch('AG Stock Movements', Defaults('AG Stock Movements'),
+                        {Title: m.Title & "-UNDO",
+                         MovementDate: Now(),
+                         MovementDay: Text(Today(), "yyyy-mm-dd"),
+                         MovementType: "Undo",
+                         ItemCode: m.ItemCode,
+                         ItemName: m.ItemName,
+                         Section: m.Section,
+                         Qty: m.Qty,
+                         QtyChange: -m.QtyChange,
+                         Location: m.Location,
+                         BalanceAfter: nb + nh,
+                         JobNumber: m.JobNumber,
+                         TransactionID: m.TransactionID & "-UNDO",
+                         PackItemCode: m.PackItemCode,
+                         WorkerName: m.WorkerName,
+                         WorkerEmail: m.WorkerEmail,
+                         WorkerAVLID: m.WorkerAVLID,
+                         RecordedByEmail: Lower(User().Email),
+                         Reversed: true,
+                         ReversalOf: m.Title,
+                         Notes: "Undo of " & m.Title})))),
+                Notify("Undo failed: " & FirstError.Message, NotificationType.Error),
+                Notify("Take undone and stock put back.", NotificationType.Success);
+                Refresh('AG Stock Movements')
+              )

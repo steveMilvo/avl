@@ -1,0 +1,393 @@
+# Paste onto the blank screen scrReceive. MANAGER ONLY (Peter).
+# The Home button is hidden for staff, and scrReceive.OnVisible sends anyone else back to Home.
+# Modes:
+#   Receive delivery        - adds the quantity to the chosen store.
+#   Stocktake count         - sets the chosen store to the counted quantity (use this for the go-live count).
+#                             Register row: Qty = the count, QtyChange = the adjustment.
+#   Transfer to other store - moves the quantity BHW -> HQ2 or HQ2 -> BHW (two register rows).
+# "Full stock level" is the 100% level the 20% / 10% alerts are measured against.
+- hdrRecv:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Manager - stock in"
+      X: |-
+        =0
+      Y: |-
+        =0
+      Width: |-
+        =Parent.Width
+      Height: |-
+        =90
+      Fill: |-
+        =RGBA(0, 70, 140, 1)
+      Color: |-
+        =White
+      Size: |-
+        =22
+      FontWeight: |-
+        =FontWeight.Bold
+      Align: |-
+        =Align.Center
+- btnRecvBack:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="‹ Home"
+      OnSelect: |-
+        =Navigate(scrHome, ScreenTransition.UnCover)
+      X: |-
+        =10
+      Y: |-
+        =20
+      Width: |-
+        =120
+      Height: |-
+        =50
+      Fill: |-
+        =Transparent
+      Color: |-
+        =White
+      BorderThickness: |-
+        =0
+      Size: |-
+        =16
+- ddMode:
+    Control: Classic/DropDown
+    Properties:
+      Items: |-
+        =["Receive delivery", "Stocktake count", "Transfer to other store"]
+      Default: |-
+        ="Receive delivery"
+      X: |-
+        =20
+      Y: |-
+        =105
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =60
+      Size: |-
+        =18
+- lblRSection:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Section"
+      X: |-
+        =20
+      Y: |-
+        =175
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =32
+      Size: |-
+        =14
+      FontWeight: |-
+        =FontWeight.Semibold
+- ddRSection:
+    Control: Classic/DropDown
+    Properties:
+      Items: |-
+        =ForAll(colSections As s, {Value: s.Section})
+      X: |-
+        =20
+      Y: |-
+        =207
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =56
+      Size: |-
+        =16
+- lblRItem:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Item"
+      X: |-
+        =20
+      Y: |-
+        =270
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =32
+      Size: |-
+        =14
+      FontWeight: |-
+        =FontWeight.Semibold
+- ddRItem:
+    Control: Classic/DropDown
+    Properties:
+      Items: |-
+        =ForAll(Sort(Filter(colItems, Section = ddRSection.Selected.Value), Title) As i, {Value: i.Title})
+      X: |-
+        =20
+      Y: |-
+        =302
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =56
+      Size: |-
+        =16
+- lblRNow:
+    Control: Label
+    Properties:
+      Text: |-
+        =With({it: LookUp(colItems, Title = ddRItem.Selected.Value)},
+            If(IsBlank(it), "",
+               "Now: BHW " & it.OnHandBHW & "  ·  HQ2 " & it.OnHandHQ2 & "  ·  Total " & it.OnHand &
+               If(it.ParLevel > 0, "  (" & Text(it.OnHand / it.ParLevel, "0%") & " of full)", "  (no full level set)")))
+      X: |-
+        =20
+      Y: |-
+        =362
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =40
+      Size: |-
+        =13
+- lblRLoc:
+    Control: Label
+    Properties:
+      Text: |-
+        =If(ddMode.Selected.Value = "Transfer to other store", "From store", "Store")
+      X: |-
+        =20
+      Y: |-
+        =408
+      Width: |-
+        =290
+      Height: |-
+        =32
+      Size: |-
+        =14
+      FontWeight: |-
+        =FontWeight.Semibold
+- ddRLoc:
+    Control: Classic/DropDown
+    Properties:
+      Items: |-
+        =varLocations
+      Default: |-
+        ="BHW"
+      X: |-
+        =20
+      Y: |-
+        =440
+      Width: |-
+        =290
+      Height: |-
+        =56
+      Size: |-
+        =16
+- lblRQty:
+    Control: Label
+    Properties:
+      Text: |-
+        =Switch(ddMode.Selected.Value, "Stocktake count", "Counted quantity", "Transfer to other store", "Quantity to move", "Quantity received")
+      X: |-
+        =330
+      Y: |-
+        =408
+      Width: |-
+        =290
+      Height: |-
+        =32
+      Size: |-
+        =14
+      FontWeight: |-
+        =FontWeight.Semibold
+- txtRQty:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =""
+      Format: |-
+        =TextFormat.Number
+      X: |-
+        =330
+      Y: |-
+        =440
+      Width: |-
+        =290
+      Height: |-
+        =56
+      Size: |-
+        =18
+- lblRPar:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Full stock level (100%) - alerts at 20% (email) and 10% (Teams)"
+      X: |-
+        =20
+      Y: |-
+        =506
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =32
+      Size: |-
+        =13
+      FontWeight: |-
+        =FontWeight.Semibold
+- txtRPar:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =Text(LookUp(colItems, Title = ddRItem.Selected.Value).ParLevel)
+      Format: |-
+        =TextFormat.Number
+      X: |-
+        =20
+      Y: |-
+        =538
+      Width: |-
+        =290
+      Height: |-
+        =56
+      Size: |-
+        =16
+- txtRSupplier:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =""
+      HintText: |-
+        ="Supplier"
+      Visible: |-
+        =ddMode.Selected.Value = "Receive delivery"
+      X: |-
+        =20
+      Y: |-
+        =610
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =56
+      Size: |-
+        =16
+- txtRDocket:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =""
+      HintText: |-
+        ="Delivery docket / PO number"
+      Visible: |-
+        =ddMode.Selected.Value = "Receive delivery"
+      X: |-
+        =20
+      Y: |-
+        =676
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =56
+      Size: |-
+        =16
+- txtRNote:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =""
+      HintText: |-
+        ="Note (optional)"
+      Mode: |-
+        =TextMode.MultiLine
+      X: |-
+        =20
+      Y: |-
+        =742
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =90
+      Size: |-
+        =14
+- btnRecvSave:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="SAVE"
+      X: |-
+        =20
+      Y: |-
+        =850
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =100
+      Fill: |-
+        =RGBA(0, 70, 140, 1)
+      Size: |-
+        =22
+      OnSelect: |-
+        =With({sel: LookUp(colItems, Title = ddRItem.Selected.Value),
+               q: Value(txtRQty.Text),
+               par: Value(txtRPar.Text),
+               loc: ddRLoc.Selected.Value,
+               other: If(ddRLoc.Selected.Value = "BHW", "HQ2", "BHW"),
+               m: ddMode.Selected.Value},
+          If(
+            !varIsManager, Notify("Manager only.", NotificationType.Error),
+            IsBlank(sel), Notify("Choose the item.", NotificationType.Error),
+            IsBlank(q) || q < 0 || (q = 0 && m <> "Stocktake count"), Notify("Enter the quantity.", NotificationType.Error),
+            With({it: LookUp('AG Stock Items', ItemCode = sel.ItemCode),
+                  txn: Text(Now(), "yyyymmdd-hhmmss") & "-" & Coalesce(varMe.AVLID, "MGR")},
+              With({nb: Switch(m,
+                          "Receive delivery", it.OnHandBHW + If(loc = "BHW", q, 0),
+                          "Stocktake count", If(loc = "BHW", q, it.OnHandBHW),
+                          it.OnHandBHW + If(loc = "BHW", -q, q)),
+                    nh: Switch(m,
+                          "Receive delivery", it.OnHandHQ2 + If(loc = "HQ2", q, 0),
+                          "Stocktake count", If(loc = "HQ2", q, it.OnHandHQ2),
+                          it.OnHandHQ2 + If(loc = "HQ2", -q, q))},
+                With({change: (nb + nh) - (it.OnHandBHW + it.OnHandHQ2),
+                      base: {MovementDate: Now(),
+                             MovementDay: Text(Today(), "yyyy-mm-dd"),
+                             ItemCode: it.ItemCode,
+                             ItemName: it.Title,
+                             Section: it.Section,
+                             BalanceAfter: nb + nh,
+                             TransactionID: txn,
+                             WorkerName: varMe.Title,
+                             WorkerEmail: varMe.Email,
+                             WorkerAVLID: varMe.AVLID,
+                             RecordedByEmail: Lower(User().Email),
+                             Reversed: false,
+                             Notes: txtRNote.Text}},
+                  IfError(
+                    Patch('AG Stock Items', it,
+                      {OnHandBHW: nb, OnHandHQ2: nh, OnHand: nb + nh,
+                       ParLevel: If(IsBlank(par), it.ParLevel, par)});
+                    If(m = "Transfer to other store",
+                      Patch('AG Stock Movements', Defaults('AG Stock Movements'), base,
+                        {Title: txn & "-" & it.ItemCode & "-OUT", MovementType: "Transfer out",
+                         Qty: q, QtyChange: -q, Location: loc, JobNumber: "TRANSFER TO " & other});
+                      Patch('AG Stock Movements', Defaults('AG Stock Movements'), base,
+                        {Title: txn & "-" & it.ItemCode & "-IN", MovementType: "Transfer in",
+                         Qty: q, QtyChange: q, Location: other, JobNumber: "TRANSFER FROM " & loc}),
+                      Patch('AG Stock Movements', Defaults('AG Stock Movements'), base,
+                        {Title: txn & "-" & it.ItemCode,
+                         MovementType: If(m = "Receive delivery", "Receipt", "Stocktake count"),
+                         Qty: q, QtyChange: change, Location: loc,
+                         Supplier: txtRSupplier.Text, DocketNo: Upper(Trim(txtRDocket.Text))})),
+                    Notify("NOT saved: " & FirstError.Message, NotificationType.Error),
+                    Notify(m & " saved for " & it.Title & ". New total " & (nb + nh), NotificationType.Success);
+                    ClearCollect(colItems, Filter('AG Stock Items', Active = true));
+                    Reset(txtRQty);
+                    Reset(txtRSupplier);
+                    Reset(txtRDocket);
+                    Reset(txtRNote)
+                  )
+                )
+              )
+            )
+          )
+        )
