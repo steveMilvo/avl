@@ -1,0 +1,121 @@
+# Paste onto the blank screen scrAsk. Staff can ask about the toolbox topic before (or without) signing.
+# Each question is saved to TBX Questions and emailed to Steve (flow 5), with the asker as reply-to,
+# so Steve can answer or forward it to the leader responsible for the meeting.
+- hdrAsk:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Ask a question"
+      X: |-
+        =0
+      Y: |-
+        =0
+      Width: |-
+        =Parent.Width
+      Height: |-
+        =90
+      Fill: |-
+        =varGreen
+      Color: |-
+        =White
+      Size: |-
+        =22
+      FontWeight: |-
+        =FontWeight.Bold
+      Align: |-
+        =Align.Center
+- btnAskBack:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="‹ Back"
+      OnSelect: |-
+        =Back()
+      X: |-
+        =10
+      Y: |-
+        =20
+      Width: |-
+        =120
+      Height: |-
+        =50
+      Fill: |-
+        =Transparent
+      Color: |-
+        =White
+      BorderThickness: |-
+        =0
+      Size: |-
+        =16
+- lblAskAbout:
+    Control: Label
+    Properties:
+      Text: |-
+        ="About: " & varMtg.Topic & " (" & Text(varMtg.MeetingDate, "d mmm yyyy") & ")" & Char(10) &
+         "Your question goes to Steve, who will answer or pass it to the leader responsible for this toolbox. The reply comes to your AVL email."
+      X: |-
+        =20
+      Y: |-
+        =100
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =150
+      Size: |-
+        =14
+- txtAsk:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =""
+      HintText: |-
+        ="Type your question, or tap the keyboard mic to speak"
+      Mode: |-
+        =TextMode.MultiLine
+      X: |-
+        =20
+      Y: |-
+        =260
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =300
+      Size: |-
+        =16
+- btnAskSend:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="SEND QUESTION"
+      DisplayMode: |-
+        =If(Len(Trim(txtAsk.Text)) > 2, DisplayMode.Edit, DisplayMode.Disabled)
+      X: |-
+        =20
+      Y: |-
+        =580
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =96
+      Fill: |-
+        =varGreen
+      Size: |-
+        =20
+      OnSelect: |-
+        =IfError(
+          Patch('TBX Questions', Defaults('TBX Questions'),
+            {Title: "Q-" & Text(Now(), "yyyymmdd-hhmmss") & "-" & varPerson.AVLID,
+             MeetingID: varMtg.Title,
+             Topic: varMtg.Topic,
+             PersonName: varPerson.Title,
+             AVLID: varPerson.AVLID,
+             Email: Lower(varPerson.Email),
+             Question: Trim(txtAsk.Text),
+             AskedAt: Now(),
+             AskedFrom: "Ask button",
+             QStatus: "New"}),
+          Notify("NOT sent: " & FirstError.Message, NotificationType.Error),
+          Notify("Question sent to Steve. The answer will come to your AVL email.", NotificationType.Success);
+          Reset(txtAsk);
+          Back()
+        )

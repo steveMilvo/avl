@@ -1,0 +1,279 @@
+# Paste onto the blank screen scrAdmin. ADMIN ONLY (TbxRole = Admin). Set scrAdmin.OnVisible (App.fx.md).
+# Pick a meeting -> who has signed, who in the team hasn't, sheet / PDF / folder links,
+# Close now, Extend 7 days, Mark uploaded to WHS Monitor.
+- hdrAdmin:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Sign-off status"
+      X: |-
+        =0
+      Y: |-
+        =0
+      Width: |-
+        =Parent.Width
+      Height: |-
+        =90
+      Fill: |-
+        =RGBA(0, 70, 140, 1)
+      Color: |-
+        =White
+      Size: |-
+        =22
+      FontWeight: |-
+        =FontWeight.Bold
+      Align: |-
+        =Align.Center
+- btnAdminBack:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="‹ Home"
+      OnSelect: |-
+        =Navigate(scrHome, ScreenTransition.UnCover)
+      X: |-
+        =10
+      Y: |-
+        =20
+      Width: |-
+        =120
+      Height: |-
+        =50
+      Fill: |-
+        =Transparent
+      Color: |-
+        =White
+      BorderThickness: |-
+        =0
+      Size: |-
+        =16
+- ddAdmMtg:
+    Control: Classic/DropDown
+    Properties:
+      Items: |-
+        =ForAll(colRecent As m, {Value: m.Title & "  ·  " & m.Status})
+      Default: |-
+        =varAdm.Title & "  ·  " & varAdm.Status
+      OnChange: |-
+        =Set(varAdm, LookUp(colRecent, Title & "  ·  " & Status = ddAdmMtg.Selected.Value));
+        ClearCollect(colAdmSigs, Filter('TBX Signatures', MeetingID = varAdm.Title));
+        ClearCollect(colTeam, If(varAdm.Team = "All", Filter('TBX People', Active = true), Filter('TBX People', Team = varAdm.Team && Active = true)))
+      X: |-
+        =20
+      Y: |-
+        =100
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =56
+      Size: |-
+        =14
+- lblAdmSummary:
+    Control: Label
+    Properties:
+      Text: |-
+        =varAdm.Topic & Char(10) &
+         CountRows(colAdmSigs) & " signed (" & CountRows(Filter(colAdmSigs, SignedWhen = "Read after meeting")) & " after the meeting)  ·  " &
+         CountRows(Filter(colTeam As p, IsBlank(LookUp(colAdmSigs, AVLID = p.AVLID)))) & " not signed" & Char(10) &
+         "Open until " & Text(varAdm.OpenUntil, "ddd d mmm") & "  ·  " & varAdm.Status &
+         If(IsBlank(varAdm.WHSMRef), "", "  ·  WHSM " & varAdm.WHSMRef)
+      X: |-
+        =20
+      Y: |-
+        =162
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =100
+      Size: |-
+        =14
+- btnAdmSheet:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="Sheet"
+      DisplayMode: |-
+        =If(IsBlank(varAdm.SheetUrl), DisplayMode.Disabled, DisplayMode.Edit)
+      OnSelect: |-
+        =Launch(varAdm.SheetUrl)
+      X: |-
+        =20
+      Y: |-
+        =270
+      Width: |-
+        =190
+      Height: |-
+        =56
+      Size: |-
+        =14
+- btnAdmPdf:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="PDF"
+      DisplayMode: |-
+        =If(IsBlank(varAdm.PdfUrl), DisplayMode.Disabled, DisplayMode.Edit)
+      OnSelect: |-
+        =Launch(varAdm.PdfUrl)
+      X: |-
+        =225
+      Y: |-
+        =270
+      Width: |-
+        =190
+      Height: |-
+        =56
+      Size: |-
+        =14
+- btnAdmFolder:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="Folder"
+      OnSelect: |-
+        =Launch(varAdm.FolderUrl)
+      X: |-
+        =430
+      Y: |-
+        =270
+      Width: |-
+        =190
+      Height: |-
+        =56
+      Size: |-
+        =14
+- lblAdmNot:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Not signed: " & Concat(Filter(colTeam As p, IsBlank(LookUp(colAdmSigs, AVLID = p.AVLID))), Title, ", ")
+      X: |-
+        =20
+      Y: |-
+        =336
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =110
+      Size: |-
+        =13
+      Color: |-
+        =varRed
+- galAdmSigs:
+    Control: Gallery
+    Variant: Vertical
+    Properties:
+      Items: |-
+        =Sort(colAdmSigs, SignedAt, SortOrder.Ascending)
+      TemplateSize: |-
+        =56
+      X: |-
+        =0
+      Y: |-
+        =450
+      Width: |-
+        =Parent.Width
+      Height: |-
+        =Parent.Height - 450 - 260
+    Children:
+      - lblAdmSigRow:
+          Control: Label
+          Properties:
+            Text: |-
+              =ThisItem.PersonName & "  ·  " & Text(ThisItem.SignedAt, "d mmm h:mm am/pm") & "  ·  " & ThisItem.SignedWhen &
+               If(ThisItem.InSheet, "", "  ·  (not yet in sheet)")
+            X: |-
+              =20
+            Y: |-
+              =6
+            Width: |-
+              =Parent.TemplateWidth - 40
+            Height: |-
+              =44
+            Size: |-
+              =13
+- btnAdmClose:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="Close now"
+      Visible: |-
+        =varAdm.Status = "Open"
+      OnSelect: |-
+        =Patch('TBX Meetings', LookUp('TBX Meetings', ID = varAdm.ID), {Status: "Close requested"});
+        Notify("Closing - the PDF will be in the folder within a few minutes.", NotificationType.Success);
+        Set(varAdm, LookUp('TBX Meetings', ID = varAdm.ID))
+      X: |-
+        =20
+      Y: |-
+        =Parent.Height - 250
+      Width: |-
+        =290
+      Height: |-
+        =64
+      Fill: |-
+        =varRed
+      Size: |-
+        =15
+- btnAdmExtend:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="Extend 7 days"
+      Visible: |-
+        =varAdm.Status = "Open"
+      OnSelect: |-
+        =Patch('TBX Meetings', LookUp('TBX Meetings', ID = varAdm.ID), {OpenUntil: DateAdd(varAdm.OpenUntil, 7, TimeUnit.Days)});
+        Set(varAdm, LookUp('TBX Meetings', ID = varAdm.ID))
+      X: |-
+        =330
+      Y: |-
+        =Parent.Height - 250
+      Width: |-
+        =290
+      Height: |-
+        =64
+      Fill: |-
+        =RGBA(0, 70, 140, 1)
+      Size: |-
+        =15
+- txtWHSM:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =varAdm.WHSMRef
+      HintText: |-
+        ="WHS Monitor reference"
+      X: |-
+        =20
+      Y: |-
+        =Parent.Height - 170
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =56
+      Size: |-
+        =15
+- btnAdmUploaded:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="Mark PDF uploaded to WHS Monitor"
+      DisplayMode: |-
+        =If(varAdm.Status = "Closed" && !IsBlank(Trim(txtWHSM.Text)), DisplayMode.Edit, DisplayMode.Disabled)
+      OnSelect: |-
+        =Patch('TBX Meetings', LookUp('TBX Meetings', ID = varAdm.ID), {Status: "Uploaded to WHSM", WHSMRef: Trim(txtWHSM.Text)});
+        Set(varAdm, LookUp('TBX Meetings', ID = varAdm.ID));
+        Notify("Recorded.", NotificationType.Success)
+      X: |-
+        =20
+      Y: |-
+        =Parent.Height - 100
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =80
+      Fill: |-
+        =varGreen
+      Size: |-
+        =16

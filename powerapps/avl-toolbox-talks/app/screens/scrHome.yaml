@@ -1,0 +1,417 @@
+# Paste onto the blank screen scrHome. Set scrHome.OnVisible separately (App.fx.md).
+# Top half: confirm AVL ID (shown until confirmed). Bottom half: the current toolbox and its files.
+- imgLogo:
+    Control: Image
+    Properties:
+      Image: |-
+        ='av-logo-small'
+      X: |-
+        =20
+      Y: |-
+        =14
+      Width: |-
+        =80
+      Height: |-
+        =76
+- lblTitle:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Toolbox Talk"
+      X: |-
+        =110
+      Y: |-
+        =20
+      Width: |-
+        =Parent.Width - 130
+      Height: |-
+        =64
+      Size: |-
+        =26
+      FontWeight: |-
+        =FontWeight.Bold
+      Color: |-
+        =varGreen
+- lblAskAVL:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Enter your AVL ID"
+      Visible: |-
+        =IsBlank(varPerson)
+      X: |-
+        =20
+      Y: |-
+        =120
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =40
+      Size: |-
+        =18
+      FontWeight: |-
+        =FontWeight.Semibold
+- txtAVL:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =LookUp('TBX People', Email = Lower(User().Email) && Active = true).AVLID
+      HintText: |-
+        ="AVL ID"
+      Visible: |-
+        =IsBlank(varPerson)
+      X: |-
+        =20
+      Y: |-
+        =165
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =64
+      Size: |-
+        =22
+- btnContinue:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="CONTINUE"
+      Visible: |-
+        =IsBlank(varPerson)
+      X: |-
+        =20
+      Y: |-
+        =245
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =80
+      Fill: |-
+        =varGreen
+      Size: |-
+        =20
+      OnSelect: |-
+        =With({p: LookUp('TBX People', AVLID = Trim(txtAVL.Text) && Active = true)},
+            If(IsBlank(p), Notify("AVL ID not found. Ask Steve to add you to the toolbox list.", NotificationType.Error),
+               Lower(p.Email) <> Lower(User().Email), Notify("That AVL ID belongs to a different login. Use your own AVL phone.", NotificationType.Error),
+               Set(varPerson, p);
+               ClearCollect(colOpen,
+                   Filter('TBX Meetings', Status = "Open" && Team = p.Team),
+                   Filter('TBX Meetings', Status = "Open" && Team = "All"));
+               ClearCollect(colMySigs, Filter('TBX Signatures', AVLID = p.AVLID));
+               Set(varMtg, First(Sort(colOpen, MeetingDate, SortOrder.Descending)))))
+- lblWho:
+    Control: Label
+    Properties:
+      Text: |-
+        =varPerson.Title & "  ·  AVL ID " & varPerson.AVLID
+      Visible: |-
+        =!IsBlank(varPerson)
+      X: |-
+        =20
+      Y: |-
+        =100
+      Width: |-
+        =Parent.Width - 180
+      Height: |-
+        =40
+      Size: |-
+        =15
+- btnNotMe:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="Not you?"
+      Visible: |-
+        =!IsBlank(varPerson)
+      OnSelect: |-
+        =Set(varPerson, Blank()); Set(varMtg, Blank()); Clear(colOpen); Clear(colMySigs); Reset(txtAVL)
+      X: |-
+        =Parent.Width - 160
+      Y: |-
+        =100
+      Width: |-
+        =140
+      Height: |-
+        =40
+      Fill: |-
+        =Transparent
+      Color: |-
+        =varGreen
+      BorderThickness: |-
+        =0
+      Size: |-
+        =13
+- lblNone:
+    Control: Label
+    Properties:
+      Text: |-
+        ="No toolbox talk is open for signing right now."
+      Visible: |-
+        =!IsBlank(varPerson) && IsBlank(varMtg)
+      X: |-
+        =20
+      Y: |-
+        =160
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =80
+      Size: |-
+        =16
+- lblMtgTopic:
+    Control: Label
+    Properties:
+      Text: |-
+        =varMtg.Topic
+      Visible: |-
+        =!IsBlank(varMtg)
+      X: |-
+        =20
+      Y: |-
+        =150
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =80
+      Size: |-
+        =22
+      FontWeight: |-
+        =FontWeight.Bold
+- lblMtgInfo:
+    Control: Label
+    Properties:
+      Text: |-
+        =Text(varMtg.MeetingDate, "dddd d mmmm yyyy") &
+         If(IsBlank(varMtg.Presenter), "", "  ·  " & varMtg.Presenter) &
+         Char(10) & "Open for signing until " & Text(varMtg.OpenUntil, "ddd d mmm")
+      Visible: |-
+        =!IsBlank(varMtg)
+      X: |-
+        =20
+      Y: |-
+        =232
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =60
+      Size: |-
+        =14
+      Color: |-
+        =RGBA(70, 70, 70, 1)
+- lblFiles:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Read the toolbox information:"
+      Visible: |-
+        =!IsBlank(varMtg)
+      X: |-
+        =20
+      Y: |-
+        =300
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =36
+      Size: |-
+        =15
+      FontWeight: |-
+        =FontWeight.Semibold
+- galFiles:
+    Control: Gallery
+    Variant: Vertical
+    Properties:
+      Items: |-
+        =ForAll(Table(ParseJSON(Coalesce(varMtg.Files, "[]"))) As f,
+            {FileName: Text(f.Value.name), Url: Text(f.Value.url)})
+      Visible: |-
+        =!IsBlank(varMtg)
+      TemplateSize: |-
+        =74
+      X: |-
+        =14
+      Y: |-
+        =338
+      Width: |-
+        =Parent.Width - 28
+      Height: |-
+        =250
+    Children:
+      - btnFile:
+          Control: Classic/Button
+          Properties:
+            Text: |-
+              ="📄  " & ThisItem.FileName
+            OnSelect: |-
+              =Launch(ThisItem.Url)
+            X: |-
+              =6
+            Y: |-
+              =4
+            Width: |-
+              =Parent.TemplateWidth - 12
+            Height: |-
+              =64
+            Fill: |-
+              =RGBA(225, 240, 230, 1)
+            Color: |-
+              =varGreen
+            Align: |-
+              =Align.Left
+            Size: |-
+              =14
+- btnAsk:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="❓ Ask a question about this toolbox"
+      Visible: |-
+        =!IsBlank(varMtg)
+      OnSelect: |-
+        =Navigate(scrAsk, ScreenTransition.Cover)
+      X: |-
+        =20
+      Y: |-
+        =594
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =50
+      Fill: |-
+        =Transparent
+      Color: |-
+        =varGreen
+      BorderColor: |-
+        =varGreen
+      BorderThickness: |-
+        =1
+      Size: |-
+        =14
+- lblSigned:
+    Control: Label
+    Properties:
+      Text: |-
+        ="✓ Signed " & Text(LookUp(colMySigs, MeetingID = varMtg.Title).SignedAt, "ddd d mmm h:mm am/pm")
+      Visible: |-
+        =!IsBlank(varMtg) && !IsBlank(LookUp(colMySigs, MeetingID = varMtg.Title))
+      X: |-
+        =20
+      Y: |-
+        =650
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =90
+      Size: |-
+        =20
+      FontWeight: |-
+        =FontWeight.Bold
+      Color: |-
+        =varGreen
+      Align: |-
+        =Align.Center
+- btnGoSign:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="I'VE READ IT – SIGN"
+      Visible: |-
+        =!IsBlank(varMtg) && IsBlank(LookUp(colMySigs, MeetingID = varMtg.Title))
+      OnSelect: |-
+        =Navigate(scrSign, ScreenTransition.Cover)
+      X: |-
+        =20
+      Y: |-
+        =650
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =96
+      Fill: |-
+        =varGreen
+      Size: |-
+        =20
+- lblAlso:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Also still to sign:"
+      Visible: |-
+        =!IsBlank(varPerson) && CountRows(galAlso.AllItems) > 0
+      X: |-
+        =20
+      Y: |-
+        =760
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =36
+      Size: |-
+        =15
+      FontWeight: |-
+        =FontWeight.Semibold
+      Color: |-
+        =varRed
+- galAlso:
+    Control: Gallery
+    Variant: Vertical
+    Properties:
+      Items: |-
+        =Sort(Filter(colOpen As m, m.Title <> varMtg.Title && IsBlank(LookUp(colMySigs, MeetingID = m.Title))), MeetingDate, SortOrder.Descending)
+      Visible: |-
+        =!IsBlank(varPerson)
+      TemplateSize: |-
+        =70
+      X: |-
+        =14
+      Y: |-
+        =798
+      Width: |-
+        =Parent.Width - 28
+      Height: |-
+        =Parent.Height - 920
+    Children:
+      - btnAlso:
+          Control: Classic/Button
+          Properties:
+            Text: |-
+              =Text(ThisItem.MeetingDate, "d mmm") & "  ·  " & ThisItem.Topic
+            OnSelect: |-
+              =Set(varMtg, ThisItem)
+            X: |-
+              =6
+            Y: |-
+              =4
+            Width: |-
+              =Parent.TemplateWidth - 12
+            Height: |-
+              =60
+            Fill: |-
+              =RGBA(250, 230, 230, 1)
+            Color: |-
+              =varRed
+            Align: |-
+              =Align.Left
+            Size: |-
+              =14
+- btnAdmin:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="Admin: sign-off status"
+      Visible: |-
+        =varPerson.TbxRole = "Admin"
+      OnSelect: |-
+        =Set(varAdm, varMtg); Navigate(scrAdmin, ScreenTransition.Cover)
+      X: |-
+        =20
+      Y: |-
+        =Parent.Height - 100
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =80
+      Fill: |-
+        =RGBA(0, 70, 140, 1)
+      Size: |-
+        =16

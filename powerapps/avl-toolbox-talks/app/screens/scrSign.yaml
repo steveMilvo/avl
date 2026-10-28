@@ -1,0 +1,256 @@
+# Paste onto the blank screen scrSign. Set scrSign.OnVisible separately (App.fx.md).
+- hdrSign:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Sign off"
+      X: |-
+        =0
+      Y: |-
+        =0
+      Width: |-
+        =Parent.Width
+      Height: |-
+        =90
+      Fill: |-
+        =varGreen
+      Color: |-
+        =White
+      Size: |-
+        =22
+      FontWeight: |-
+        =FontWeight.Bold
+      Align: |-
+        =Align.Center
+- btnSignBack:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="‹ Back"
+      OnSelect: |-
+        =Back()
+      X: |-
+        =10
+      Y: |-
+        =20
+      Width: |-
+        =120
+      Height: |-
+        =50
+      Fill: |-
+        =Transparent
+      Color: |-
+        =White
+      BorderThickness: |-
+        =0
+      Size: |-
+        =16
+- lblSignMtg:
+    Control: Label
+    Properties:
+      Text: |-
+        =varMtg.Topic & Char(10) & Text(varMtg.MeetingDate, "dddd d mmmm yyyy")
+      X: |-
+        =20
+      Y: |-
+        =100
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =80
+      Size: |-
+        =17
+      FontWeight: |-
+        =FontWeight.Semibold
+- lblSignAs:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Signing as " & varPerson.Title & " (AVL ID " & varPerson.AVLID & ")"
+      X: |-
+        =20
+      Y: |-
+        =182
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =36
+      Size: |-
+        =14
+      Color: |-
+        =RGBA(70, 70, 70, 1)
+- lblDecl:
+    Control: Label
+    Properties:
+      Text: |-
+        =varDeclaration
+      X: |-
+        =20
+      Y: |-
+        =226
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =130
+      Size: |-
+        =16
+      FontItalic: |-
+        =true
+      Fill: |-
+        =RGBA(240, 245, 242, 1)
+      PaddingLeft: |-
+        =12
+      PaddingRight: |-
+        =12
+- chkDecl:
+    Control: Classic/CheckBox
+    Properties:
+      Text: |-
+        ="I agree with the declaration above"
+      Default: |-
+        =false
+      X: |-
+        =20
+      Y: |-
+        =366
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =60
+      Size: |-
+        =16
+- lblSigHint:
+    Control: Label
+    Properties:
+      Text: |-
+        ="Sign with your finger:"
+      X: |-
+        =20
+      Y: |-
+        =436
+      Width: |-
+        =400
+      Height: |-
+        =34
+      Size: |-
+        =14
+      FontWeight: |-
+        =FontWeight.Semibold
+- btnClearSig:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="Clear"
+      OnSelect: |-
+        =Reset(penSig)
+      X: |-
+        =Parent.Width - 140
+      Y: |-
+        =432
+      Width: |-
+        =120
+      Height: |-
+        =40
+      Fill: |-
+        =Transparent
+      Color: |-
+        =varGreen
+      Size: |-
+        =14
+- penSig:
+    Control: PenInput
+    Properties:
+      X: |-
+        =40
+      Y: |-
+        =476
+      Width: |-
+        =560
+      Height: |-
+        =180
+      BorderThickness: |-
+        =2
+      BorderColor: |-
+        =RGBA(160, 160, 160, 1)
+      Color: |-
+        =RGBA(10, 10, 60, 1)
+- txtQuestions:
+    Control: Classic/TextInput
+    Properties:
+      Default: |-
+        =""
+      HintText: |-
+        ="Any questions or concerns? They go to Steve (optional - tap the keyboard mic to speak)"
+      Mode: |-
+        =TextMode.MultiLine
+      X: |-
+        =20
+      Y: |-
+        =672
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =110
+      Size: |-
+        =14
+- btnSign:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        ="SIGN"
+      DisplayMode: |-
+        =If(chkDecl.Value, DisplayMode.Edit, DisplayMode.Disabled)
+      X: |-
+        =20
+      Y: |-
+        =800
+      Width: |-
+        =Parent.Width - 40
+      Height: |-
+        =110
+      Fill: |-
+        =varGreen
+      Size: |-
+        =24
+      OnSelect: |-
+        =With({sig: JSON(penSig.Image, JSONFormat.IncludeBinaryData),
+               key: varMtg.Title & "|" & varPerson.AVLID},
+          If(
+            !chkDecl.Value, Notify("Tick the declaration first.", NotificationType.Error),
+            sig = varBlankSig || Len(sig) < Len(varBlankSig) + 100, Notify("Please draw your signature.", NotificationType.Error),
+            Len(sig) > 60000, Notify("Signature too large. Tap Clear and sign a little smaller.", NotificationType.Error),
+            Today() > varMtg.OpenUntil, Notify("This toolbox closed on " & Text(varMtg.OpenUntil, "d mmm") & ".", NotificationType.Error),
+            !IsBlank(LookUp('TBX Signatures', Title = key)), Notify("You have already signed this toolbox.", NotificationType.Warning); Navigate(scrHome, ScreenTransition.UnCover),
+            IfError(
+              Patch('TBX Signatures', Defaults('TBX Signatures'),
+                {Title: key,
+                 MeetingID: varMtg.Title,
+                 PersonName: varPerson.Title,
+                 AVLID: varPerson.AVLID,
+                 Team: varPerson.Team,
+                 Declaration: varDeclaration,
+                 Signature: Substitute(sig, Char(34), ""),
+                 SignedAt: Now(),
+                 SignedWhen: If(DateDiff(varMtg.MeetingDate, Today(), TimeUnit.Days) <= 0, "At meeting", "Read after meeting"),
+                 QuestionsRaised: txtQuestions.Text,
+                 SignedInEmail: Lower(User().Email),
+                 InSheet: false}),
+              Notify("NOT signed: " & FirstError.Message & ". Try again.", NotificationType.Error),
+              If(!IsBlank(Trim(txtQuestions.Text)),
+                Patch('TBX Questions', Defaults('TBX Questions'),
+                  {Title: "Q-" & Text(Now(), "yyyymmdd-hhmmss") & "-" & varPerson.AVLID,
+                   MeetingID: varMtg.Title,
+                   Topic: varMtg.Topic,
+                   PersonName: varPerson.Title,
+                   AVLID: varPerson.AVLID,
+                   Email: Lower(varPerson.Email),
+                   Question: Trim(txtQuestions.Text),
+                   AskedAt: Now(),
+                   AskedFrom: "Sign-off",
+                   QStatus: "New"}));
+              Notify("Signed. Thank you, " & varPerson.Title & ".", NotificationType.Success);
+              ClearCollect(colMySigs, Filter('TBX Signatures', AVLID = varPerson.AVLID));
+              Navigate(scrHome, ScreenTransition.UnCover)
+            )
+          )
+        )
