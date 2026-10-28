@@ -1,67 +1,84 @@
 /**
  * Office Script: WriteAttendanceSheet
  *
- * Rewrites the "Attendance" sheet of a copied toolbox template with one row per attendee and embeds
- * each person's drawn signature as a picture in the Signature column.
+ * Rewrites the whole sign-off table of a meeting's sheet from the TBX Signatures list, with each
+ * person's signature embedded as a picture. Flow "TBX - Close meeting" runs it when any signature
+ * failed to reach the sheet, so the sheet always matches the list. It is also used to fill the heading
+ * block when the sheet is first created (pass an empty rows array).
  *
- * Called from Power Automate: Excel Online (Business) > Run script, on the copy of the template.
- *   headersJson - JSON array of column headings, in order. Match the WHS Monitor import template.
- *   rowsJson    - JSON array of objects. Keys must match the headings. The key "Signature" holds the
- *                 PNG as base64, with or without the "data:image/png;base64," prefix.
- *   meetingJson - JSON object written into the "Meeting" sheet as label / value pairs.
+ * Template: the table heading row starts at the cell named "TableStart" (see AppendSignature).
+ * Heading-block cells are filled from the names in meetingJson where the template defines a name with
+ * the same key (e.g. Topic, MeetingDate, Presenter, Location, Team, Declaration, MeetingID).
  *
- * Returns the number of rows written, so the flow can check it against the attendance count.
+ *   headersJson - JSON array of table headings in order (the same list AppendSignature uses).
+ *   rowsJson    - JSON array of signer objects keyed by heading; "No." is filled in by the script.
+ *   meetingJson - JSON object of heading-block values, e.g. {"Topic":"Hearing protection", ...}.
+ *
+ * Returns the number of signer rows written, so the flow can check it against the list.
  */
 function main(workbook: ExcelScript.Workbook, headersJson: string, rowsJson: string, meetingJson: string): number {
   const headers: string[] = JSON.parse(headersJson);
   const rows: { [key: string]: string }[] = JSON.parse(rowsJson);
   const meeting: { [key: string]: string } = JSON.parse(meetingJson);
+  const rowHeight = 48;
 
-  const sheet = workbook.getWorksheet("Attendance") ?? workbook.addWorksheet("Attendance");
+  // Heading block
+  Object.keys(meeting).forEach((k) => {
+    const item = workbook.getNamedItem(k);
+    if (item) item.getRange().getCell(0, 0).setValue(meeting[k]);
+  });
+
+  const start = tableStart(workbook);
+  const sheet = start.getWorksheet();
+  const top = start.getRowIndex();
+  const left = start.getColumnIndex();
   const sigCol = headers.indexOf("Signature");
-  const rowHeight = 48; // points; tall enough to read a signature
+  const noCol = headers.indexOf("No.");
 
-  // Start clean: a rebuild must not leave rows or pictures from earlier appends behind
-  sheet.getShapes().forEach((sh) => sh.delete());
-  sheet.getRange().clear(ExcelScript.ClearApplyTo.all);
+  // Start clean: remove earlier signature pictures and table rows
+  sheet.getShapes().forEach((sh) => {
+    if (sh.getName().startsWith("sig_")) sh.delete();
+  });
+  sheet.getRangeByIndexes(top + 1, left, 1000, headers.length).clear(ExcelScript.ClearApplyTo.contents);
 
-  // Header row
-  const head = sheet.getRangeByIndexes(0, 0, 1, headers.length);
+  const head = sheet.getRangeByIndexes(top, left, 1, headers.length);
   head.setValues([headers]);
   head.getFormat().getFont().setBold(true);
   head.getFormat().getFill().setColor("#005E38");
   head.getFormat().getFont().setColor("#FFFFFF");
+  if (sigCol >= 0) sheet.getRangeByIndexes(top, left + sigCol, 1, 1).getFormat().setColumnWidth(170);
 
   rows.forEach((r, i) => {
-    const rowIndex = i + 1;
-    const values = headers.map((h) => (h === "Signature" ? "" : (r[h] ?? "")));
-    sheet.getRangeByIndexes(rowIndex, 0, 1, headers.length).setValues([values]);
-    sheet.getRangeByIndexes(rowIndex, 0, 1, headers.length).getFormat().setRowHeight(rowHeight);
-
+    const rowIndex = top + 1 + i;
+    const values = headers.map((h, c) =>
+      c === noCol ? String(i + 1) : h === "Signature" ? "" : (r[h] ?? ""));
+    const row = sheet.getRangeByIndexes(rowIndex, left, 1, headers.length);
+    row.setValues([values]);
+    row.getFormat().setRowHeight(rowHeight);
+    row.getFormat().setVerticalAlignment(ExcelScript.VerticalAlignment.center);
+    row.getFormat().getBorders().getItem(ExcelScript.BorderIndex.edgeBottom).setStyle(ExcelScript.BorderLineStyle.continuous);
     if (sigCol >= 0 && r["Signature"]) {
-      const b64 = r["Signature"].replace(/^data:image\/[a-z]+;base64,/, "");
-      const cell = sheet.getRangeByIndexes(rowIndex, sigCol, 1, 1);
-      const pic = sheet.addImage(b64);
-      pic.setLockAspectRatio(true);
-      pic.setHeight(rowHeight - 6);
-      pic.setLeft(cell.getLeft() + 3);
-      pic.setTop(cell.getTop() + 3);
-      pic.setPlacement(ExcelScript.Placement.twoCell); // picture moves and sizes with its cell
-      pic.setName(`sig_${rowIndex}`);
+      placeSignature(sheet, sheet.getRangeByIndexes(rowIndex, left + sigCol, 1, 1), r["Signature"], rowHeight, `sig_${r["AVL ID"] ?? rowIndex}`);
     }
   });
 
-  if (sigCol >= 0) sheet.getRangeByIndexes(0, sigCol, 1, 1).getFormat().setColumnWidth(170);
-  sheet.getRangeByIndexes(0, 0, rows.length + 1, headers.length).getFormat().autofitColumns();
-  if (sigCol >= 0) sheet.getRangeByIndexes(0, sigCol, 1, 1).getFormat().setColumnWidth(170);
-  sheet.getFreezePanes().freezeRows(1);
-
-  // Meeting details
-  const info = workbook.getWorksheet("Meeting") ?? workbook.addWorksheet("Meeting");
-  const pairs = Object.keys(meeting).map((k) => [k, meeting[k]]);
-  if (pairs.length) info.getRangeByIndexes(0, 0, pairs.length, 2).setValues(pairs);
-  info.getRangeByIndexes(0, 0, Math.max(pairs.length, 1), 1).getFormat().getFont().setBold(true);
-  info.getRangeByIndexes(0, 0, Math.max(pairs.length, 1), 2).getFormat().autofitColumns();
-
   return rows.length;
+}
+
+function tableStart(workbook: ExcelScript.Workbook): ExcelScript.Range {
+  const named = workbook.getNamedItem("TableStart");
+  if (named) return named.getRange().getCell(0, 0);
+  const sheet = workbook.getWorksheet("Sign-off") ?? workbook.addWorksheet("Sign-off");
+  return sheet.getRange("A1");
+}
+
+function placeSignature(sheet: ExcelScript.Worksheet, cell: ExcelScript.Range, data: string, rowHeight: number, name: string) {
+  const b64 = data.replace(/^data:image\/[a-z]+;base64,/, "");
+  const pic = sheet.addImage(b64);
+  pic.setLockAspectRatio(true);
+  pic.setHeight(rowHeight - 6);
+  pic.setLeft(cell.getLeft() + 3);
+  pic.setTop(cell.getTop() + 3);
+  pic.setPlacement(ExcelScript.Placement.twoCell);
+  pic.setName(name);
 }

@@ -100,7 +100,9 @@ run from the flows with *Excel Online (Business) → Run script*:
   Signature.
 - **Footer:** *"Signed electronically in the AVL Toolbox app. Record: <Meeting ID>. Generated <date>."*
 
-The pictures move and size with their cell, so printing keeps each signature beside its name. The PDF
+The template marks where the table starts with a defined name `TableStart`, and has named cells
+(Topic, MeetingDate, Presenter, Location, Team, Declaration, MeetingID) for the heading block, which the
+scripts fill in. The pictures move and size with their cell, so printing keeps each signature beside its name. The PDF
 is made by copying the sheet to the flow owner's OneDrive, using OneDrive *Convert file* → PDF (the
 signatures show), and saving the PDF into the dated folder.
 
