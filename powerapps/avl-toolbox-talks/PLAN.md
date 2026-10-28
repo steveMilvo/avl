@@ -1,6 +1,7 @@
 # Plan — AVL Toolbox Talks app (Buronga)
 
-Staff open the **Toolbox** tile on the Buronga AVL main board, enter their **AVL ID**, read the
+Staff open the **Toolbox** tile on the Buronga AVL main board **on their own AVL phone**, confirm their
+**AVL ID**, read the
 information for the current toolbox meeting, and sign the **"read and understood" declaration** with a
 drawn signature. Their name and signature go **straight into that meeting's group spreadsheet**, one
 row per person with the signature embedded as a picture, ready for bulk upload to **WHS Monitor**.
@@ -21,7 +22,7 @@ Power Automate, standard licences), so it can be handed to Cowork the same way.
   presenter) and open it                   │                                        template → TBX Sheets/<Meeting>.xlsx
                                            ▼
                                   Main board → Toolbox tile
-                                  Enter AVL ID → "Hi Sam Smith" (checked)
+                                  On own AVL phone: AVL ID shown → "Hi Sam Smith"
                                   Current toolbox opens: info, key points,
                                   slides / video
                                   Tick: "I have read and understood…"
@@ -44,7 +45,7 @@ Power Automate, standard licences), so it can be handed to Cowork the same way.
 | List / library | One row per | Main columns |
 |---|---|---|
 | **TBX Meetings** | toolbox meeting | Meeting ID (Title, unique, e.g. `TBX-2026-11-03-CELLAR`), Topic, MeetingDate, MeetingTime, Location, Team, Presenter, PresenterEmail, Info (Note: the toolbox content staff read), KeyPoints (Note), ContentUrl (slides PDF or video), OpenUntil (date late readers can sign until), Status (Draft · Open · Closed · Uploaded to WHSM), SheetUrl, PdfUrl, WHSMRef |
-| **TBX Signatures** | person × meeting | Record key (Title, unique = `MeetingID\|AVLID`), MeetingID, Name, AVLID, Team, Declaration (the exact wording they signed), Signature (Note, base64 PNG), SignedAt, SignedWhen (At meeting · Read after meeting, set automatically by date), QuestionsRaised (Note), DeviceLogin, InSheet (Yes/No, set by Flow 2) |
+| **TBX Signatures** | person × meeting | Record key (Title, unique = `MeetingID\|AVLID`), MeetingID, Name, AVLID, Team, Declaration (the exact wording they signed), Signature (Note, base64 PNG), SignedAt, SignedWhen (At meeting · Read after meeting, set automatically by date), QuestionsRaised (Note), SignedInEmail (the phone's AVL login), InSheet (Yes/No, set by Flow 2) |
 | **TBX People** | staff member | Name (Title), AVLID (unique), Email, Team, Role (Staff · Presenter · Admin), Active. *(Can be shared with the AusGrape app.)* |
 | **TBX Content** (library) | material | slides, PDFs and handouts linked from meetings |
 | **TBX Sheets** (library) | group spreadsheet | `TBX-Attendance-Template.xlsx`, plus one `.xlsx` (and `.pdf` once closed) per meeting |
@@ -56,7 +57,7 @@ every list.
 
 | Screen | Who | What it does |
 |---|---|---|
-| **Sign in** | all | Enter AVL ID → looks up TBX People → shows the name to confirm ("Not you?"). Unknown IDs are refused with "see your supervisor". |
+| **Sign in** | all | The phone's AVL login finds the person in TBX People and pre-fills their AVL ID and name; they confirm it. If the login isn't on the people list, they type their AVL ID, and it must belong to that login's email, so no one can sign as someone else. Unknown people see "see your supervisor". |
 | **Current toolbox** | all | Opens straight onto the current meeting for the person's team (or "All"): topic, date, presenter, the info and key points, an **Open slides / video** button. If they've already signed: "Signed 03/11 07:42 ✓". Below it: **other open toolboxes you haven't signed yet**, so late readers catch up. |
 | **Declaration & sign** | all | The declaration in full, with a required tick: *"I have read and understood the information in this toolbox talk, I have had the opportunity to ask questions, and I will follow the controls described."* (wording to be confirmed). Signature pad, optional questions or concerns (dictation mic), then **SIGN**. The button stays off until the tick is on and something is drawn. |
 | **Meetings** | presenter, admin | Create or edit a meeting, attach slides, set Open until, Open / Close · a live list of who has signed and who in the team hasn't · Sheet and PDF links · **Mark uploaded to WHSM** |
@@ -65,9 +66,9 @@ Signature capture follows the method proven in the BHW Tank QR app: `PenInput` �
 `JSON(pen.Image, JSONFormat.IncludeBinaryData)` → stored as text in the Signature column. Keep the pad
 about 560 × 180 so each signature stays small, and check the stored length in testing.
 
-**Sign-in note:** Power Apps itself needs a Microsoft 365 login on the device. The AVL ID identifies the
-*person* signing, so a shared site phone or tablet logged in once works for everyone. Staff with their
-own AVL Microsoft account just use their phone.
+**Sign-in:** everyone signs on their own AVL phone, already logged in to their AVL Microsoft account.
+The record stores both the AVL ID and the phone's login email, which gives a strong audit trail: the
+signature came from that person's own device.
 
 ## 4. The group spreadsheet with embedded signatures
 
@@ -114,7 +115,7 @@ scripts.)
 ## 7. Build phases (each one is a Cowork hand-off, like the AusGrape plan)
 
 1. Lists, libraries and the Excel template.
-2. App: Sign in, Current toolbox, Declaration & sign. Test on an iPhone and on a shared tablet.
+2. App: Sign in, Current toolbox, Declaration & sign. Test on two staff members' own AVL phones.
 3. Meetings screen (create, open, close, live sign-off list).
 4. Flows 1–3 plus the Office Scripts. Test with 3 people signing at once and 1 signing the next day;
    open the xlsx and check every signature is in the right row. Then do a **trial bulk upload into WHS
@@ -130,8 +131,7 @@ scripts.)
 3. How long can people who missed the meeting still read and sign (e.g. 14 days)? What happens after
    that: closed, or kept open until everyone in the team has signed?
 4. Who can create meetings (supervisors, Steve, team leaders)?
-5. Do all toolbox staff have an AVL Microsoft 365 login, or will some use a shared site device?
-6. Teams or crews to use (Cellar, Packaging, AusGrape, Maintenance, Lab)?
+5. Teams or crews to use (Cellar, Packaging, AusGrape, Maintenance, Lab)?
 
 ---
 
