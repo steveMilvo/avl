@@ -151,6 +151,7 @@ signatures show), and saving the PDF into the dated folder.
 | Meetings | Already scheduled on the intranet. Each talk has a **dated folder**; the sign-off sheet and PDF are saved in it. |
 | Staff | Cellar first, then Maintenance and Lab |
 | Device | Each person's own AVL phone |
+| Speech to text | Questions can be spoken, the same way as the cleaning app (Cowork checks how it does this and copies it). |
 | Questions | **Ask a question** button on each toolbox, plus the question box when signing. Each question is emailed to Steve with the asker as reply-to; Steve answers or forwards it to the meeting leader. Logged in TBX Questions. |
 | Folder names | `yyyy-MM-dd` (e.g. `2026-12-10`), roughly monthly. The meeting date is read from the folder name. |
 | Template | Already in each dated folder. The app writes into a copy of it. |

@@ -36,6 +36,7 @@ who answers or forwards it to the meeting leader.
 | Staff | Cellar first, then Maintenance and Lab. **Steve adds people to TBX People by hand.** |
 | Device | Each person's own AVL phone |
 | Questions | Emailed to Steve (reply-to = the asker). Steve forwards them to the meeting leader. |
+| Speech to text | Questions can be spoken, **the same way as the cleaning app**. |
 
 ## 3. Rules while working
 
@@ -63,7 +64,14 @@ who answers or forwards it to the meeting leader.
 3. Work out **where the topic comes from**: the template heading, a file name, or the presenter guide.
    Adjust Flow 1's `Topic` step to match.
 4. Ask Steve for his **AVL work email** (for `AdminEmail`).
-5. Report the findings in one short message, then continue.
+5. **Speech to text:** open the existing **cleaning app** in Power Apps Studio (read only, don't
+   save) and see how its speech-to-text works.
+   - If it is the iOS keyboard mic in a multi-line text box, `txtAsk` and `txtQuestions` already work
+     that way. Keep their "tap the keyboard mic to speak" hints.
+   - If it uses its own mic button (e.g. a Microphone control plus a flow that transcribes), copy that
+     control and flow into `scrAsk` and `scrSign` so the transcribed text lands in `txtAsk` /
+     `txtQuestions`. Reuse the cleaning app's flow and connection rather than building a new one.
+6. Report the findings in one short message, then continue.
 
 ### Phase 2 — Lists and settings (Appendix A)
 1. Put the Phase 1 layout into `SHEET_MAP` in the script (or leave it `null`).
