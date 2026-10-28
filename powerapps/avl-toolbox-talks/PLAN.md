@@ -25,7 +25,7 @@ Power Automate, standard licences), so it can be handed to Cowork the same way.
  ─────────────────────────                ────────────────────────────               ─────────
  Toolbox meeting scheduled                                                           Flow 1 (each morning):
  + its dated folder, e.g.                                                            finds today's meeting, copies
- Toolbox Talks/2026-11-03 Hearing protection/ ─────────────────────────────────────► the sign-off template INTO the
+ Managers Toolbox Meeting/<dated folder>/ ────────────────────────────────────────► the sign-off template INTO the
    ├ Hearing protection.pdf                                                          dated folder, fills in the
    └ (talk files)                                                                    meeting details, lists the
                                                                                      folder's files for the app
@@ -61,7 +61,7 @@ protection.xlsx`, and the matching `.pdf`.
 | **TBX Meetings** (new list, filled by Flow 1) | toolbox meeting | Meeting ID (Title, unique, e.g. `TBX-2026-11-03-CELLAR`), Topic, MeetingDate, Team (Cellar now; Maintenance and Lab later), Presenter, Location, FolderUrl, Files (name + link of each talk file), OpenUntil (= MeetingDate + 7 days), Status (Open · Closed · Uploaded to WHSM), SheetUrl, PdfUrl, WHSMRef |
 | **TBX Signatures** (new list) | person × meeting | Record key (Title, unique = `MeetingID\|AVLID`), MeetingID, Name, AVLID, Team, Declaration (the exact wording signed), Signature (Note, base64 PNG), SignedAt, SignedWhen (At meeting · Read after meeting, set by date), QuestionsRaised (Note), SignedInEmail (the phone's AVL login), InSheet (Yes/No, set by Flow 2) |
 | **TBX People** (new list) | staff member | Name (Title), AVLID (unique), Email, Team (Cellar · Maintenance · Lab), Role (Staff · Admin), Active. *(Can be shared with the AusGrape app.)* |
-| `TBX-SignOff-Template.xlsx` | — | the sign-off template, kept in the Toolbox Talks library (a *Templates* folder) |
+| `TBX-SignOff-Template.xlsx` | — | the sign-off template (built: `template/TBX-SignOff-Template.xlsx`), kept in `Managers Toolbox Meeting/_Templates` |
 
 The unique `MeetingID|AVLID` key means each person signs each meeting once. Version history is on for
 every list.
@@ -94,7 +94,7 @@ run from the flows with *Excel Online (Business) → Run script*:
   Flow 3 uses it at close if any row failed, so the sheet always matches the list.
 
 **Layout** (laid out to print or save as an A4 landscape PDF):
-- **Heading block:** AVL logo, *Toolbox Talk Sign-off*, topic, date, presenter, location, team.
+- **Heading block:** AV logo, *Toolbox Talk Sign-off*, topic, date, presenter, location, team.
 - **Declaration:** the full wording, printed once above the table.
 - **Table:** No. · Name · AVL ID · Team · Signed when (At meeting / Read after meeting) · Date & time ·
   Signature.
@@ -119,13 +119,16 @@ signatures show), and saving the PDF into the dated folder.
 
 - **Office Scripts** must be allowed for the tenant (Microsoft 365 admin centre → Settings → Office
   Scripts) so flows can run the scripts.
-- The flow owner (Steve or an L&D service account) needs edit rights on the Toolbox Talks library and
-  its dated folders. Staff need **read** access to the folders, so they can open the talk files.
+- The flow owner (Steve or an L&D service account) needs edit rights on the *Managers Toolbox Meeting* folder
+  and its dated folders. Cellar staff need **read** access to the dated folders so they can open the talk
+  files. The folder is named *Managers* Toolbox Meeting, so check who can see it now. If staff shouldn't see
+  the whole folder, Flow 1 copies each meeting's talk files into a staff-readable *Toolbox Talks - Staff*
+  library instead, and the app links to those copies.
 
 ## 7. Build phases (each one is a Cowork hand-off, like the AusGrape plan)
 
 1. Find the intranet schedule and the dated folders · create the 3 lists · build the sign-off template
-   and put it in the library's Templates folder · load the Cellar staff into TBX People.
+   and put it in `Managers Toolbox Meeting/_Templates` · Steve adds the Cellar staff to TBX People by hand.
 2. App: Sign in, Current toolbox, Declaration & sign. Test on two Cellar staff members' own AVL phones.
 3. Flows 1–3 plus the Office Scripts. Test with a test meeting folder: 3 people sign at once and 1 signs
    the next day. Open the xlsx and check every signature is in the right row. Close it and check the PDF
@@ -145,15 +148,20 @@ signatures show), and saving the PDF into the dated folder.
 | Meetings | Already scheduled on the intranet. Each talk has a **dated folder**; the sign-off sheet and PDF are saved in it. |
 | Staff | Cellar first, then Maintenance and Lab |
 | Device | Each person's own AVL phone |
+| Intranet folder | Buronga Hill Winery site → Documents → **Managers Toolbox Meeting** (one dated folder per meeting): https://australianvintagecomau.sharepoint.com/sites/australiawinemakingburongahillwineryUserCreated/Shared%20Documents/Managers%20Toolbox%20Meeting |
+| App lists | On the same Buronga Hill Winery site, so one set of permissions covers the folders and the lists |
+| Logo | AV monogram (`assets/av-logo.png`), in the template heading |
+| Staff list | Steve adds people to TBX People by hand (name, AVL ID, email, team) |
 
 ## Still needed
 
-1. **The intranet location of the toolbox schedule and the dated folders.** Please send the link to the
-   library or page, and one example dated folder. That shows how the folder names are written (e.g.
-   `2026-11-03 Hearing protection` or `03.11.26 - Hearing Protection`) and where the presenter and topic
-   are stored.
-2. **The Cellar staff list:** name, AVL ID and work email.
-3. Whether to use the AVL logo on the PDF (and the logo file), or plain text.
+1. **How the dated folders are named.** From here I can't open the intranet. The first build step
+   (Cowork, in your browser) opens *Managers Toolbox Meeting*, lists the folder names and what's in a
+   typical one, then sets the date and topic rule (e.g. `2026-11-03 Hearing protection` or
+   `03.11.26 - Hearing Protection`). Tell me if the presenter and location are written anywhere: in a
+   file, in folder columns, or on an intranet calendar.
+2. **Folder access:** can Cellar staff open *Managers Toolbox Meeting* today? If not, use the staff copy
+   option in section 6.
 
 ---
 
