@@ -1,131 +1,137 @@
 # Plan — AVL Toolbox Talks app (Buronga)
 
-A phone and tablet app where staff open the scheduled toolbox talk, read or attend it, and sign off with
-their AVL ID and a drawn signature. Each session produces **one Excel sheet of every attendee with their
-signature embedded**, ready for bulk upload to **WHS Monitor**. It uses the same build method as the
-AusGrape Packing Supplies app (SharePoint lists + Power Apps canvas + Power Automate, standard licences),
-so it can be handed to Cowork the same way.
+Staff open the **Toolbox** tile on the Buronga AVL main board, enter their **AVL ID**, read the
+information for the current toolbox meeting, and sign the **"read and understood" declaration** with a
+drawn signature. Their name and signature go **straight into that meeting's group spreadsheet**, one
+row per person with the signature embedded as a picture, ready for bulk upload to **WHS Monitor**.
+
+People who missed the meeting use exactly the same steps later. They read the same information and sign
+the same declaration, and the spreadsheet shows they signed after the meeting.
+
+It uses the same build method as the AusGrape Packing Supplies app (SharePoint lists, Power Apps canvas,
+Power Automate, standard licences), so it can be handed to Cowork the same way.
 
 ## 1. How it works
 
 ```
- Supervisor / L&D                   Staff (own phone or shared tablet)          Automatic
- ─────────────────                  ─────────────────────────────────          ─────────
- Schedule talk ──► TBX Sessions ──► "Today's toolbox" on the Home screen
- (topic, date, team,               Open talk → read content / slides / video
-  content PDF or video)            Choose: Attended  or  Read (absent on the day)
-                                   Tick "I have read and understood"
-                                   AVL ID + draw signature → Sign
-                                          │
-                                          ▼
-                                   TBX Attendance (one row per person per talk)
-                                          │
- Close session ──────────────────────────►┤  Flow: copy the Excel template,
-                                          │  write every attendee row and embed
-                                          │  each signature picture in its cell,
-                                          │  save a PDF copy, then email the
-                                          │  supervisor both links
-                                          ▼
-                                   TBX Exports library: TBX-2026-11-03-Hearing-protection.xlsx / .pdf
-                                          │
-                                          ▼
-                                   Uploaded to WHS Monitor (bulk upload) → mark "Uploaded" in the app
+ Presenter / L&D                         Staff member                               Automatic
+ ───────────────                         ────────────                               ─────────
+ Create the meeting in the app ──► TBX Meetings                                     Flow 1: the meeting's group
+ (topic, date, info, slides/video,         │                                        spreadsheet is created from the
+  presenter) and open it                   │                                        template → TBX Sheets/<Meeting>.xlsx
+                                           ▼
+                                  Main board → Toolbox tile
+                                  Enter AVL ID → "Hi Sam Smith" (checked)
+                                  Current toolbox opens: info, key points,
+                                  slides / video
+                                  Tick: "I have read and understood…"
+                                  Draw signature → SIGN
+                                           │
+                                           ▼
+                                  TBX Signatures (one row per person per meeting) ──► Flow 2: adds the row and the
+                                                                                      signature picture to that
+                                  Missed the meeting? Same steps, any time           meeting's spreadsheet, within
+                                  while it is open → marked "Read after meeting"     about a minute
+                                           │
+ Close the meeting ────────────────────────┤──► Flow 3: final check that the sheet matches the
+                                           │    signatures (rebuilds it if not), saves a PDF copy,
+                                           ▼    emails the presenter the links
+                                  Upload the xlsx to WHS Monitor → mark "Uploaded" + WHSM ref
 ```
 
 ## 2. SharePoint lists (on the AustralianVintage site)
 
 | List / library | One row per | Main columns |
 |---|---|---|
-| **TBX Sessions** | scheduled talk | Session ID (Title, unique, e.g. `TBX-2026-11-03-01`), Topic, TalkDate, StartTime, Location, Team (Cellar / Packaging / AusGrape / Maintenance / All), Presenter, PresenterEmail, Summary (Note), ContentUrl (PDF or video link), KeyPoints (Note), ReadWindowDays (default 7), Status (Scheduled · Open · Closed · Exported · Uploaded to WHSM), ExportXlsxUrl, ExportPdfUrl, WHSMRef, ClosedBy, ClosedAt |
-| **TBX Attendance** | person × talk | Record key (Title, unique = `SessionID\|AVLID`), SessionID, AttendeeName, AVLID, Email, Team, Company (for contractors), AttendanceType (Attended · Read), Understood (Yes/No), Signature (Note, base64 PNG), SignedAt, RecordedByEmail (device login), QuestionsRaised (Note) |
-| **TBX People** | staff member | Name (Title), AVLID (unique), Email, Team, Role (Staff · Presenter · Admin), Active. *(Can share one people list with the AusGrape app instead of keeping two.)* |
-| **TBX Content** (document library) | talk material | PDF slides and handouts, linked from TBX Sessions |
-| **TBX Exports** (document library) | exported sheet | the template `TBX-Attendance-Template.xlsx`, plus every generated `.xlsx` and `.pdf` |
+| **TBX Meetings** | toolbox meeting | Meeting ID (Title, unique, e.g. `TBX-2026-11-03-CELLAR`), Topic, MeetingDate, MeetingTime, Location, Team, Presenter, PresenterEmail, Info (Note: the toolbox content staff read), KeyPoints (Note), ContentUrl (slides PDF or video), OpenUntil (date late readers can sign until), Status (Draft · Open · Closed · Uploaded to WHSM), SheetUrl, PdfUrl, WHSMRef |
+| **TBX Signatures** | person × meeting | Record key (Title, unique = `MeetingID\|AVLID`), MeetingID, Name, AVLID, Team, Declaration (the exact wording they signed), Signature (Note, base64 PNG), SignedAt, SignedWhen (At meeting · Read after meeting, set automatically by date), QuestionsRaised (Note), DeviceLogin, InSheet (Yes/No, set by Flow 2) |
+| **TBX People** | staff member | Name (Title), AVLID (unique), Email, Team, Role (Staff · Presenter · Admin), Active. *(Can be shared with the AusGrape app.)* |
+| **TBX Content** (library) | material | slides, PDFs and handouts linked from meetings |
+| **TBX Sheets** (library) | group spreadsheet | `TBX-Attendance-Template.xlsx`, plus one `.xlsx` (and `.pdf` once closed) per meeting |
 
-All lists have version history on. Every filtered column is indexed. The unique `SessionID|AVLID` key
-means a person can only sign each talk once (re-signing updates their row and keeps the old version).
+The unique `MeetingID|AVLID` key means each person signs each meeting once. Version history is on for
+every list.
 
 ## 3. App screens
 
 | Screen | Who | What it does |
 |---|---|---|
-| **Home** | all | Today's toolbox for my team · upcoming talks · talks I still need to read · my history |
-| **Talk** | all | Topic, presenter, summary, key points, **Open slides / video** button |
-| **Sign off** | all | Attended / Read · "I have read and understood this toolbox talk" tick (required) · AVL ID (pre-filled; works on a shared tablet) · name shown for checking · **signature pad** · questions or concerns raised (iOS dictation mic) · **Sign** |
-| **Kiosk sign-on** | presenter | For a crew signing on one tablet: after each signature the form clears for the next person, and a live count is shown |
-| **Roll** | presenter, admin | Who has signed, plus who in the team hasn't · remind button |
-| **Schedule** | presenter, admin | Create or edit a talk, attach content, open it for signing |
-| **Close & export** | presenter, admin | Closes the talk and runs the export flow · shows the Excel and PDF links · **Mark uploaded to WHSM** (with WHSM reference) |
+| **Sign in** | all | Enter AVL ID → looks up TBX People → shows the name to confirm ("Not you?"). Unknown IDs are refused with "see your supervisor". |
+| **Current toolbox** | all | Opens straight onto the current meeting for the person's team (or "All"): topic, date, presenter, the info and key points, an **Open slides / video** button. If they've already signed: "Signed 03/11 07:42 ✓". Below it: **other open toolboxes you haven't signed yet**, so late readers catch up. |
+| **Declaration & sign** | all | The declaration in full, with a required tick: *"I have read and understood the information in this toolbox talk, I have had the opportunity to ask questions, and I will follow the controls described."* (wording to be confirmed). Signature pad, optional questions or concerns (dictation mic), then **SIGN**. The button stays off until the tick is on and something is drawn. |
+| **Meetings** | presenter, admin | Create or edit a meeting, attach slides, set Open until, Open / Close · a live list of who has signed and who in the team hasn't · Sheet and PDF links · **Mark uploaded to WHSM** |
 
 Signature capture follows the method proven in the BHW Tank QR app: `PenInput` →
-`JSON(pen.Image, JSONFormat.IncludeBinaryData)` → stored as text in the Signature column → shown back
-in an Image control. Keep the pad about 560 × 180 so each signature stays small (check the stored length
-in testing).
+`JSON(pen.Image, JSONFormat.IncludeBinaryData)` → stored as text in the Signature column. Keep the pad
+about 560 × 180 so each signature stays small, and check the stored length in testing.
 
-## 4. The Excel sheet with embedded signatures
+**Sign-in note:** Power Apps itself needs a Microsoft 365 login on the device. The AVL ID identifies the
+*person* signing, so a shared site phone or tablet logged in once works for everyone. Staff with their
+own AVL Microsoft account just use their phone.
 
-Power Automate's normal Excel actions can only write text, not pictures. The plan uses an **Office
-Script** (`office-scripts/WriteAttendanceSheet.ts`, in this folder), run from the flow by *Excel Online
-(Business) → Run script*. It:
+## 4. The group spreadsheet with embedded signatures
 
-1. Writes one row per attendee under the headings you choose.
-2. Puts each person's **signature picture in the Signature cell**, sized to the row, and set to move and
-   size with that cell, so sorting and printing keep the signature beside its name.
-3. Adds a *Session* sheet: topic, date, presenter, location, team, number signed.
+Power Automate's normal Excel actions only write text, so the pictures are placed by **Office Scripts**,
+run from the flows with *Excel Online (Business) → Run script*:
 
-Flow **TBX - Close and export** (triggered from the app's Close button):
-Get the session → get its attendance rows → *Copy file* (template → `TBX Exports/<SessionID>-<Topic>.xlsx`)
-→ *Run script* (headings, rows and session details) → check the row count matches → make the PDF:
-the file is copied to the flow owner's OneDrive, OneDrive *Convert file* to PDF (the signatures show),
-then the PDF is saved back to TBX Exports → save the links on the session → email the presenter and Steve.
+- `office-scripts/AppendSignature.ts` adds **one row** for the person who just signed and drops their
+  signature picture into that row's Signature cell. Flow 2 uses it every time someone signs.
+- `office-scripts/WriteAttendanceSheet.ts` **rewrites the whole sheet** from the TBX Signatures list.
+  Flow 3 uses it when the meeting closes, or if a row ever failed, so the spreadsheet always matches
+  the list.
 
-**Columns:** by default the Attendance sheet has *Session ID, Date, Topic, Presenter, Location, Name, AVL
-ID, Team, Company, Attended/Read, Understood, Signed at, Signature*. Once we have the WHS Monitor import
-template, the headings are changed to match it exactly. They are passed in by the flow, so no code
-changes are needed.
+The pictures are set to move and size with their cell, so sorting and printing keep each signature
+beside its name. Each sheet also has a *Meeting* tab with the topic, date, presenter, location and the
+declaration wording.
+
+**Columns** (default): *Meeting ID, Date, Topic, Presenter, Name, AVL ID, Team, Signed when (At meeting /
+Read after meeting), Signed at, Declaration accepted, Signature*. Once we have the WHS Monitor import
+template, the headings are renamed to match it exactly. Flows pass them in, so no script changes are
+needed. (The scripts look for the *Signature* and *AVL ID* headings to place the picture and to stop a
+person being added twice. If WHS Monitor uses different names for these two, change them in both
+scripts.)
 
 > **Check before building.** Bulk importers usually read only cell values and skip pictures. If WHS
-> Monitor's import ignores the signature images, the import still loads the attendance data, and the
-> signed sheet (xlsx or PDF) is attached to the WHS Monitor record as the signed evidence. Please
-> export a blank attendance / training import template from WHS Monitor so the columns can be matched.
+> Monitor's import ignores the signature images, the attendance data still imports, and the meeting's
+> signed xlsx or PDF is attached to the WHS Monitor record as the signed evidence. Please export a blank
+> attendance / training import template from WHS Monitor so the columns can be matched.
 
 ## 5. Flows (standard connectors only)
 
 | Flow | Trigger | Does |
 |---|---|---|
-| TBX - Close and export | Power Apps button | Builds the xlsx with embedded signatures and the PDF, as above |
-| TBX - Talk reminder | daily, 6:30 am | Teams message to each team that has a talk today, with the app link |
-| TBX - Read-and-sign chaser | daily, 2 pm | For open talks, lists who in the team hasn't signed and emails the presenter. When the read window ends, sets the talk to Closed and runs the export. |
-| TBX - Weekly summary | Monday 7 am | Talks held, attendance % per team, outstanding sign-offs, sheets not yet uploaded to WHSM |
+| 1 · TBX - Create meeting sheet | TBX Meetings item set to Open | Copies the template to `TBX Sheets/<MeetingID>-<Topic>.xlsx`, fills the Meeting tab, saves SheetUrl |
+| 2 · TBX - Add signature to sheet | TBX Signatures item created | Runs AppendSignature on that meeting's sheet, then sets InSheet = Yes. **Concurrency control on, degree 1**, so when a whole crew signs at once the rows go in one at a time and never clash. |
+| 3 · TBX - Close meeting | Status set to Closed (by the presenter, or automatically after Open until) | Rebuilds the sheet with WriteAttendanceSheet if any row has InSheet = No or the counts differ, makes the PDF (copy to OneDrive → *Convert file* → save to TBX Sheets), emails the presenter and Steve |
+| 4 · TBX - Reminders | daily, 6:30 am | Teams message to each team with a meeting today. For open meetings, a list of who hasn't signed goes to the presenter. |
 
 ## 6. Admin settings needed (IT, one-off)
 
 - **Office Scripts** must be allowed for the tenant (Microsoft 365 admin centre → Settings → Office
-  Scripts) so the flow can run the script. Without it, the fallback is a PDF sign-on sheet with
-  signatures plus a plain xlsx without images.
-- The flow's owner account needs edit rights to the TBX Exports library.
+  Scripts) so flows can run the scripts.
+- The flow owner (a service or L&D account) needs edit rights on TBX Sheets.
 
 ## 7. Build phases (each one is a Cowork hand-off, like the AusGrape plan)
 
-1. Lists, libraries and the Excel template (setup script, as for AusGrape).
-2. App: Home, Talk, Sign off, Kiosk. Test signing on an iPhone and on a shared tablet.
-3. Presenter screens: Schedule, Roll, Close & export.
-4. Export flow plus the Office Script. Test with 3 test signers, open the xlsx and check the signatures
-   sit in the right cells, then try a **trial bulk upload into WHS Monitor**.
-5. Reminder, chaser and weekly flows. Publish, add the tile to the Buronga AVL main board, and give out
-   the QR code.
+1. Lists, libraries and the Excel template.
+2. App: Sign in, Current toolbox, Declaration & sign. Test on an iPhone and on a shared tablet.
+3. Meetings screen (create, open, close, live sign-off list).
+4. Flows 1–3 plus the Office Scripts. Test with 3 people signing at once and 1 signing the next day;
+   open the xlsx and check every signature is in the right row. Then do a **trial bulk upload into WHS
+   Monitor**.
+5. Reminders flow. Publish, add the **Toolbox** tile to the Buronga AVL main board, QR poster for the
+   crib room.
 
 ## 8. Questions to settle first
 
 1. **WHS Monitor import:** which register do toolbox talks go into (training, meeting, or induction
-   attendance)? Please supply a blank import template. Does WHSM need one file per talk or one file for
-   many talks?
-2. Who can schedule talks (supervisors, Steve, team leaders)?
-3. Teams or crews to use (Cellar, Packaging, AusGrape, Maintenance, Lab, Contractors?).
-4. Can staff who missed the talk "read and sign" later, and for how many days?
-5. Do contractors sign without an AVL ID (company name + name only)?
-6. Is a short check question needed ("What hearing protection is required in the packing hall?")
-   before signing?
+   attendance)? Please supply a blank import template.
+2. **Declaration wording:** use the draft above, or your own?
+3. How long can people who missed the meeting still read and sign (e.g. 14 days)? What happens after
+   that: closed, or kept open until everyone in the team has signed?
+4. Who can create meetings (supervisors, Steve, team leaders)?
+5. Do all toolbox staff have an AVL Microsoft 365 login, or will some use a shared site device?
+6. Teams or crews to use (Cellar, Packaging, AusGrape, Maintenance, Lab)?
 
 ---
 
