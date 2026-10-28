@@ -1,13 +1,19 @@
 # Plan — AVL Toolbox Talks app (Buronga)
 
 Staff open the **Toolbox** tile on the Buronga AVL main board **on their own AVL phone**, confirm their
-**AVL ID**, read the
-information for the current toolbox meeting, and sign the **"read and understood" declaration** with a
-drawn signature. Their name and signature go **straight into that meeting's group spreadsheet**, one
-row per person with the signature embedded as a picture, ready for bulk upload to **WHS Monitor**.
+**AVL ID**, read the information for the current toolbox meeting, and sign the **"read and understood"
+declaration** with a drawn signature. Their name and signature go **straight into that meeting's group
+spreadsheet**, one row per person with the signature embedded as a picture. The spreadsheet lives **in
+that toolbox talk's dated folder on the intranet**.
 
-People who missed the meeting use exactly the same steps later. They read the same information and sign
-the same declaration, and the spreadsheet shows they signed after the meeting.
+People who missed the meeting use exactly the same steps for **7 days** afterwards. They read the same
+information and sign the same declaration, and the spreadsheet shows they signed after the meeting.
+
+When the 7 days are up, the sheet is saved as a **PDF in the same dated folder**. Steve uploads that PDF
+to **WHS Monitor as the sign-off evidence**.
+
+**Rollout:** Cellar staff first, then Maintenance and Lab staff (add them to the people list with their
+team; nothing else changes).
 
 It uses the same build method as the AusGrape Packing Supplies app (SharePoint lists, Power Apps canvas,
 Power Automate, standard licences), so it can be handed to Cowork the same way.
@@ -15,40 +21,47 @@ Power Automate, standard licences), so it can be handed to Cowork the same way.
 ## 1. How it works
 
 ```
- Presenter / L&D                         Staff member                               Automatic
- ───────────────                         ────────────                               ─────────
- Create the meeting in the app ──► TBX Meetings                                     Flow 1: the meeting's group
- (topic, date, info, slides/video,         │                                        spreadsheet is created from the
-  presenter) and open it                   │                                        template → TBX Sheets/<Meeting>.xlsx
-                                           ▼
-                                  Main board → Toolbox tile
-                                  On own AVL phone: AVL ID shown → "Hi Sam Smith"
-                                  Current toolbox opens: info, key points,
-                                  slides / video
-                                  Tick: "I have read and understood…"
-                                  Draw signature → SIGN
-                                           │
-                                           ▼
-                                  TBX Signatures (one row per person per meeting) ──► Flow 2: adds the row and the
-                                                                                      signature picture to that
-                                  Missed the meeting? Same steps, any time           meeting's spreadsheet, within
-                                  while it is open → marked "Read after meeting"     about a minute
-                                           │
- Close the meeting ────────────────────────┤──► Flow 3: final check that the sheet matches the
-                                           │    signatures (rebuilds it if not), saves a PDF copy,
-                                           ▼    emails the presenter the links
-                                  Upload the xlsx to WHS Monitor → mark "Uploaded" + WHSM ref
+ Intranet (already in use)                Staff member (own AVL phone)               Automatic
+ ─────────────────────────                ────────────────────────────               ─────────
+ Toolbox meeting scheduled                                                           Flow 1 (each morning):
+ + its dated folder, e.g.                                                            finds today's meeting, copies
+ Toolbox Talks/2026-11-03 Hearing protection/ ─────────────────────────────────────► the sign-off template INTO the
+   ├ Hearing protection.pdf                                                          dated folder, fills in the
+   └ (talk files)                                                                    meeting details, lists the
+                                                                                     folder's files for the app
+                                          Main board → Toolbox tile
+                                          AVL ID + name shown → confirm
+                                          Today's toolbox opens: details + the
+                                          talk files from the dated folder
+                                          Tick: "I have read and understood…"
+                                          Draw signature → SIGN
+                                                   │
+                                                   ▼
+                                          TBX Signatures (one row per person) ──────► Flow 2: adds the person's row
+                                                                                      and signature picture to the
+                                          Missed it? Same steps, any time in          spreadsheet in the dated folder
+                                          the next 7 days → "Read after meeting"      (within about a minute)
+
+                                                                                      Flow 3 (day 7): final check,
+                                                                                      saves the PDF in the dated
+                                                                                      folder, emails Steve the link
+                                                                                              │
+                                                                                              ▼
+                                                                  Steve uploads the PDF to WHS Monitor → marks "Uploaded"
 ```
 
-## 2. SharePoint lists (on the AustralianVintage site)
+Each dated folder ends up holding the talk files, `Toolbox sign-off - 2026-11-03 - Hearing
+protection.xlsx`, and the matching `.pdf`.
 
-| List / library | One row per | Main columns |
+## 2. Where the data lives
+
+| Item | One row per | Main columns |
 |---|---|---|
-| **TBX Meetings** | toolbox meeting | Meeting ID (Title, unique, e.g. `TBX-2026-11-03-CELLAR`), Topic, MeetingDate, MeetingTime, Location, Team, Presenter, PresenterEmail, Info (Note: the toolbox content staff read), KeyPoints (Note), ContentUrl (slides PDF or video), OpenUntil (date late readers can sign until), Status (Draft · Open · Closed · Uploaded to WHSM), SheetUrl, PdfUrl, WHSMRef |
-| **TBX Signatures** | person × meeting | Record key (Title, unique = `MeetingID\|AVLID`), MeetingID, Name, AVLID, Team, Declaration (the exact wording they signed), Signature (Note, base64 PNG), SignedAt, SignedWhen (At meeting · Read after meeting, set automatically by date), QuestionsRaised (Note), SignedInEmail (the phone's AVL login), InSheet (Yes/No, set by Flow 2) |
-| **TBX People** | staff member | Name (Title), AVLID (unique), Email, Team, Role (Staff · Presenter · Admin), Active. *(Can be shared with the AusGrape app.)* |
-| **TBX Content** (library) | material | slides, PDFs and handouts linked from meetings |
-| **TBX Sheets** (library) | group spreadsheet | `TBX-Attendance-Template.xlsx`, plus one `.xlsx` (and `.pdf` once closed) per meeting |
+| **Intranet toolbox schedule + dated folders** *(existing, read-only for the app)* | meeting | date, topic, presenter, the talk files in the folder |
+| **TBX Meetings** (new list, filled by Flow 1) | toolbox meeting | Meeting ID (Title, unique, e.g. `TBX-2026-11-03-CELLAR`), Topic, MeetingDate, Team (Cellar now; Maintenance and Lab later), Presenter, Location, FolderUrl, Files (name + link of each talk file), OpenUntil (= MeetingDate + 7 days), Status (Open · Closed · Uploaded to WHSM), SheetUrl, PdfUrl, WHSMRef |
+| **TBX Signatures** (new list) | person × meeting | Record key (Title, unique = `MeetingID\|AVLID`), MeetingID, Name, AVLID, Team, Declaration (the exact wording signed), Signature (Note, base64 PNG), SignedAt, SignedWhen (At meeting · Read after meeting, set by date), QuestionsRaised (Note), SignedInEmail (the phone's AVL login), InSheet (Yes/No, set by Flow 2) |
+| **TBX People** (new list) | staff member | Name (Title), AVLID (unique), Email, Team (Cellar · Maintenance · Lab), Role (Staff · Admin), Active. *(Can be shared with the AusGrape app.)* |
+| `TBX-SignOff-Template.xlsx` | — | the sign-off template, kept in the Toolbox Talks library (a *Templates* folder) |
 
 The unique `MeetingID|AVLID` key means each person signs each meeting once. Version history is on for
 every list.
@@ -57,20 +70,20 @@ every list.
 
 | Screen | Who | What it does |
 |---|---|---|
-| **Sign in** | all | The phone's AVL login finds the person in TBX People and pre-fills their AVL ID and name; they confirm it. If the login isn't on the people list, they type their AVL ID, and it must belong to that login's email, so no one can sign as someone else. Unknown people see "see your supervisor". |
-| **Current toolbox** | all | Opens straight onto the current meeting for the person's team (or "All"): topic, date, presenter, the info and key points, an **Open slides / video** button. If they've already signed: "Signed 03/11 07:42 ✓". Below it: **other open toolboxes you haven't signed yet**, so late readers catch up. |
-| **Declaration & sign** | all | The declaration in full, with a required tick: *"I have read and understood the information in this toolbox talk, I have had the opportunity to ask questions, and I will follow the controls described."* (wording to be confirmed). Signature pad, optional questions or concerns (dictation mic), then **SIGN**. The button stays off until the tick is on and something is drawn. |
-| **Meetings** | presenter, admin | Create or edit a meeting, attach slides, set Open until, Open / Close · a live list of who has signed and who in the team hasn't · Sheet and PDF links · **Mark uploaded to WHSM** |
+| **Sign in** | all | The phone's AVL login finds the person in TBX People and pre-fills their AVL ID and name; they confirm it. If they type an AVL ID instead, it must belong to that login, so no one can sign as someone else. Unknown people see "see your supervisor". |
+| **Current toolbox** | all | Opens straight onto today's (or the latest open) meeting for their team: topic, date, presenter, and a button for **each file in the dated folder** (PDF, slides, video link). If they've already signed: "Signed 03/11 07:42 ✓". Below it: **other toolboxes from the last 7 days you haven't signed**, so people who missed one can catch up. |
+| **Declaration & sign** | all | The declaration in full, with a required tick: *"I have read and understood the information in this toolbox talk, I have had the opportunity to ask questions, and I will follow the controls described."* Signature pad, optional questions or concerns (dictation mic), then **SIGN**. The button stays off until the tick is on and something is drawn. |
+| **Sign-off status** | admin (Steve) | Each meeting: who has signed and who in the team hasn't, days left, links to the sheet, PDF and dated folder · **Close now** / **Extend** · **Mark uploaded to WHSM** (with WHSM reference) |
 
 Signature capture follows the method proven in the BHW Tank QR app: `PenInput` →
 `JSON(pen.Image, JSONFormat.IncludeBinaryData)` → stored as text in the Signature column. Keep the pad
 about 560 × 180 so each signature stays small, and check the stored length in testing.
 
 **Sign-in:** everyone signs on their own AVL phone, already logged in to their AVL Microsoft account.
-The record stores both the AVL ID and the phone's login email, which gives a strong audit trail: the
-signature came from that person's own device.
+The record stores both the AVL ID and the phone's login email, so the record shows the signature came
+from that person's own device.
 
-## 4. The group spreadsheet with embedded signatures
+## 4. The sign-off spreadsheet and PDF
 
 Power Automate's normal Excel actions only write text, so the pictures are placed by **Office Scripts**,
 run from the flows with *Excel Online (Business) → Run script*:
@@ -78,60 +91,67 @@ run from the flows with *Excel Online (Business) → Run script*:
 - `office-scripts/AppendSignature.ts` adds **one row** for the person who just signed and drops their
   signature picture into that row's Signature cell. Flow 2 uses it every time someone signs.
 - `office-scripts/WriteAttendanceSheet.ts` **rewrites the whole sheet** from the TBX Signatures list.
-  Flow 3 uses it when the meeting closes, or if a row ever failed, so the spreadsheet always matches
-  the list.
+  Flow 3 uses it at close if any row failed, so the sheet always matches the list.
 
-The pictures are set to move and size with their cell, so sorting and printing keep each signature
-beside its name. Each sheet also has a *Meeting* tab with the topic, date, presenter, location and the
-declaration wording.
+**Layout** (laid out to print or save as an A4 landscape PDF):
+- **Heading block:** AVL logo, *Toolbox Talk Sign-off*, topic, date, presenter, location, team.
+- **Declaration:** the full wording, printed once above the table.
+- **Table:** No. · Name · AVL ID · Team · Signed when (At meeting / Read after meeting) · Date & time ·
+  Signature.
+- **Footer:** *"Signed electronically in the AVL Toolbox app. Record: <Meeting ID>. Generated <date>."*
 
-**Columns** (default): *Meeting ID, Date, Topic, Presenter, Name, AVL ID, Team, Signed when (At meeting /
-Read after meeting), Signed at, Declaration accepted, Signature*. Once we have the WHS Monitor import
-template, the headings are renamed to match it exactly. Flows pass them in, so no script changes are
-needed. (The scripts look for the *Signature* and *AVL ID* headings to place the picture and to stop a
-person being added twice. If WHS Monitor uses different names for these two, change them in both
-scripts.)
-
-> **Check before building.** Bulk importers usually read only cell values and skip pictures. If WHS
-> Monitor's import ignores the signature images, the attendance data still imports, and the meeting's
-> signed xlsx or PDF is attached to the WHS Monitor record as the signed evidence. Please export a blank
-> attendance / training import template from WHS Monitor so the columns can be matched.
+The pictures move and size with their cell, so printing keeps each signature beside its name. The PDF
+is made by copying the sheet to the flow owner's OneDrive, using OneDrive *Convert file* → PDF (the
+signatures show), and saving the PDF into the dated folder.
 
 ## 5. Flows (standard connectors only)
 
 | Flow | Trigger | Does |
 |---|---|---|
-| 1 · TBX - Create meeting sheet | TBX Meetings item set to Open | Copies the template to `TBX Sheets/<MeetingID>-<Topic>.xlsx`, fills the Meeting tab, saves SheetUrl |
-| 2 · TBX - Add signature to sheet | TBX Signatures item created | Runs AppendSignature on that meeting's sheet, then sets InSheet = Yes. **Concurrency control on, degree 1**, so when a whole crew signs at once the rows go in one at a time and never clash. |
-| 3 · TBX - Close meeting | Status set to Closed (by the presenter, or automatically after Open until) | Rebuilds the sheet with WriteAttendanceSheet if any row has InSheet = No or the counts differ, makes the PDF (copy to OneDrive → *Convert file* → save to TBX Sheets), emails the presenter and Steve |
-| 4 · TBX - Reminders | daily, 6:30 am | Teams message to each team with a meeting today. For open meetings, a list of who hasn't signed goes to the presenter. |
+| 1 · TBX - Open today's meeting | daily, 5:00 am | Reads today's meeting from the intranet schedule and its dated folder · creates the TBX Meetings row (OpenUntil = +7 days, the folder's file links) · copies the template into the dated folder as `Toolbox sign-off - <date> - <topic>.xlsx` and fills in the heading. It can also run on demand from the admin screen for a meeting added late. |
+| 2 · TBX - Add signature to sheet | TBX Signatures item created | Runs AppendSignature on that meeting's sheet, then sets InSheet = Yes. **Concurrency control on, degree 1**, so when the whole crew signs at once the rows go in one at a time and never clash. |
+| 3 · TBX - Close meeting | daily, 6:00 pm (closes meetings past OpenUntil) or **Close now** in the app | Rebuilds the sheet if any row has InSheet = No · saves the PDF in the dated folder · Status = Closed · emails Steve: *"Toolbox <topic> <date> closed: 14 of 16 Cellar staff signed (2 read after). PDF: <link>. Not signed: …"* |
+| 4 · TBX - Reminders | daily, 6:30 am | Teams message to Cellar staff with today's toolbox and the app link · on days 3 and 6, a Teams nudge to anyone in the team who hasn't signed |
 
 ## 6. Admin settings needed (IT, one-off)
 
 - **Office Scripts** must be allowed for the tenant (Microsoft 365 admin centre → Settings → Office
   Scripts) so flows can run the scripts.
-- The flow owner (a service or L&D account) needs edit rights on TBX Sheets.
+- The flow owner (Steve or an L&D service account) needs edit rights on the Toolbox Talks library and
+  its dated folders. Staff need **read** access to the folders, so they can open the talk files.
 
 ## 7. Build phases (each one is a Cowork hand-off, like the AusGrape plan)
 
-1. Lists, libraries and the Excel template.
-2. App: Sign in, Current toolbox, Declaration & sign. Test on two staff members' own AVL phones.
-3. Meetings screen (create, open, close, live sign-off list).
-4. Flows 1–3 plus the Office Scripts. Test with 3 people signing at once and 1 signing the next day;
-   open the xlsx and check every signature is in the right row. Then do a **trial bulk upload into WHS
-   Monitor**.
-5. Reminders flow. Publish, add the **Toolbox** tile to the Buronga AVL main board, QR poster for the
-   crib room.
+1. Find the intranet schedule and the dated folders · create the 3 lists · build the sign-off template
+   and put it in the library's Templates folder · load the Cellar staff into TBX People.
+2. App: Sign in, Current toolbox, Declaration & sign. Test on two Cellar staff members' own AVL phones.
+3. Flows 1–3 plus the Office Scripts. Test with a test meeting folder: 3 people sign at once and 1 signs
+   the next day. Open the xlsx and check every signature is in the right row. Close it and check the PDF
+   in the dated folder. Upload the PDF to WHS Monitor once as a trial.
+4. Sign-off status screen and reminders flow. Publish, add the **Toolbox** tile to the Buronga AVL
+   main board.
+5. Later: add the Maintenance and Lab staff to TBX People. Their meetings flow through automatically
+   once their schedules and folders follow the same pattern.
 
-## 8. Questions to settle first
+## 8. Decisions (confirmed 28/10/2026)
 
-1. **WHS Monitor import:** which register do toolbox talks go into (training, meeting, or induction
-   attendance)? Please supply a blank import template.
-2. **Declaration wording:** use the draft above, or your own?
-3. How long can people who missed the meeting still read and sign (e.g. 14 days)? What happens after
-   that: closed, or kept open until everyone in the team has signed?
-4. Who can create meetings (supervisors, Steve, team leaders)?
-5. Teams or crews to use (Cellar, Packaging, AusGrape, Maintenance, Lab)?
+| Item | Decision |
+|---|---|
+| WHS Monitor | No import template. The meeting's sign-off sheet is saved as a **PDF** and uploaded as the sign-off evidence. |
+| Declaration | *"I have read and understood the information in this toolbox talk, I have had the opportunity to ask questions, and I will follow the controls described."* |
+| Late sign-off | 7 days after the meeting, then auto-close |
+| Meetings | Already scheduled on the intranet. Each talk has a **dated folder**; the sign-off sheet and PDF are saved in it. |
+| Staff | Cellar first, then Maintenance and Lab |
+| Device | Each person's own AVL phone |
+
+## Still needed
+
+1. **The intranet location of the toolbox schedule and the dated folders.** Please send the link to the
+   library or page, and one example dated folder. That shows how the folder names are written (e.g.
+   `2026-11-03 Hearing protection` or `03.11.26 - Hearing Protection`) and where the presenter and topic
+   are stored.
+2. **The Cellar staff list:** name, AVL ID and work email.
+3. Whether to use the AVL logo on the PDF (and the logo file), or plain text.
 
 ---
 
