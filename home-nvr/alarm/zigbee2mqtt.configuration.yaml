@@ -1,0 +1,20 @@
+# Seed for Zigbee2MQTT, copied to data/zigbee2mqtt/configuration.yaml on first
+# setup. Zigbee2MQTT then owns that copy (it stores paired devices and the network
+# key there). The MQTT login, page token and adapter type come from .env.
+version: 5
+homeassistant:
+  enabled: true
+frontend:
+  enabled: true
+  port: 8080
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://mosquitto:1883
+serial:
+  port: /dev/ttyACM0
+availability:
+  enabled: true
+advanced:
+  network_key: GENERATE
+  pan_id: GENERATE
+  ext_pan_id: GENERATE

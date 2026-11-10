@@ -21,15 +21,26 @@ fi
 # hop on this machine. Devices connect to Tailscale's trusted certificate on 443.
 sudo tailscale serve --bg https+insecure://localhost:8971
 
+# Home Assistant (alarm panel), when the alarm layer is installed.
+ha=0
+if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx homeassistant; then
+  sudo tailscale serve --bg --https=8443 http://localhost:8123
+  ha=1
+fi
+
 name="$(sudo tailscale status --json | python3 -c 'import json,sys; print(json.load(sys.stdin)["Self"]["DNSName"].rstrip("."))')"
 ts_ip="$(sudo tailscale ip -4 | head -1)"
 
 echo
-echo "Roaming address:  https://$name"
+echo "Cameras (Frigate):        https://$name"
+if [ "$ha" = 1 ]; then
+  echo "Alarm (Home Assistant):   https://$name:8443"
+  echo "  In the Home Assistant phone app, use that address as the server URL."
+fi
 echo
 echo "On each phone or tablet:"
 echo "  1. Install the Tailscale app and sign in with the same account."
-echo "  2. Open the address above and log in to Frigate."
+echo "  2. Open the camera address above and log in to Frigate."
 echo "  3. Android (Chrome): menu > Install app.   iPhone (Safari): Share > Add to Home Screen."
 echo
 echo "Optional, for lowest-latency live view and two-way talk away from home, add to"

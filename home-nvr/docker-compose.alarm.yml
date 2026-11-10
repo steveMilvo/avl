@@ -1,0 +1,55 @@
+# Alarm layer: MQTT broker, Zigbee sensor bridge and Home Assistant (alarm panel,
+# automations, phone alerts). Enabled by ./scripts/setup-alarm.sh, which generates
+# the secrets and finds the Zigbee dongle. Not loaded unless ALARM_ENABLED=true.
+services:
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    volumes:
+      - ./data/mosquitto/config:/mosquitto/config
+      - ./data/mosquitto/data:/mosquitto/data
+    ports:
+      - "127.0.0.1:1883:1883" # for Home Assistant on this machine only
+
+  zigbee2mqtt:
+    container_name: zigbee2mqtt
+    image: ghcr.io/koenkk/zigbee2mqtt:latest
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      ZIGBEE2MQTT_CONFIG_MQTT_USER: ${FRIGATE_MQTT_USER}
+      ZIGBEE2MQTT_CONFIG_MQTT_PASSWORD: ${FRIGATE_MQTT_PASSWORD}
+      ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN: ${ZIGBEE_UI_TOKEN}
+      ZIGBEE2MQTT_CONFIG_SERIAL_ADAPTER: ${ZIGBEE_ADAPTER}
+    volumes:
+      - ./data/zigbee2mqtt:/app/data
+      - /run/udev:/run/udev:ro
+    devices:
+      - ${ZIGBEE_DEVICE}:/dev/ttyACM0
+    ports:
+      - "8080:8080" # sensor pairing page, protected by ZIGBEE_UI_TOKEN
+
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+    network_mode: host # web UI on port 8123
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+    volumes:
+      - ./data/homeassistant:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+
+  frigate:
+    depends_on:
+      - mosquitto
+    ports:
+      # Frigate's internal API (no login). Bound to this machine only, so Home
+      # Assistant can ask for clips and read camera state.
+      - "127.0.0.1:5000:5000"

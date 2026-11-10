@@ -13,3 +13,5 @@ home-nvr/docker-compose.override.yml
 home-nvr/storage/
 home-nvr/config/*
 !home-nvr/config/config.yml
+home-nvr/docker-compose.gpu.yml
+home-nvr/data/

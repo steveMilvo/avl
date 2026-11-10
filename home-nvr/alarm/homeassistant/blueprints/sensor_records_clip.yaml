@@ -1,0 +1,73 @@
+blueprint:
+  name: Sensor trip records a camera clip
+  description: >
+    When a motion sensor or door/window contact trips, Frigate saves a clip from
+    the chosen camera and marks it as an alert, even if the camera's own detection
+    saw nothing. Create one automation per sensor-and-camera pairing.
+  domain: automation
+  input:
+    sensors:
+      name: Sensors
+      description: Motion sensors or door/window contacts that cover this camera's area.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: binary_sensor
+    camera:
+      name: Frigate camera name
+      description: Exactly as named in Frigate, for example front_door.
+      selector:
+        text:
+    label:
+      name: Label shown in Frigate
+      default: sensor
+      selector:
+        text:
+    duration:
+      name: Clip length
+      default: 30
+      selector:
+        number:
+          min: 10
+          max: 300
+          unit_of_measurement: seconds
+    armed_only:
+      name: Only while the alarm is armed
+      default: true
+      selector:
+        boolean:
+    alarm_panel:
+      name: Alarm panel
+      description: Needed when "Only while the alarm is armed" is on.
+      default: alarm_control_panel.alarmo
+      selector:
+        entity:
+          filter:
+            - domain: alarm_control_panel
+
+mode: parallel
+max: 10
+
+variables:
+  armed_only: !input armed_only
+  alarm_panel: !input alarm_panel
+
+triggers:
+  - trigger: state
+    entity_id: !input sensors
+    to: "on"
+
+conditions:
+  - condition: template
+    value_template: >
+      {{ not armed_only or states(alarm_panel) in
+         ['armed_away', 'armed_home', 'armed_night', 'armed_vacation',
+          'armed_custom_bypass', 'pending', 'triggered'] }}
+
+actions:
+  - action: rest_command.frigate_record_clip
+    data:
+      camera: !input camera
+      label: !input label
+      duration: !input duration

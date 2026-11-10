@@ -1,0 +1,22 @@
+# Seed for Home Assistant, copied to data/homeassistant/ on first setup.
+default_config:
+
+# Lets the Tailscale HTTPS address (remote-access.sh) reach Home Assistant.
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 127.0.0.1
+    - ::1
+
+# Asks Frigate to save a clip from a camera, whether or not it saw anything.
+# Used by the "Sensor trip records a camera clip" blueprint.
+rest_command:
+  frigate_record_clip:
+    url: "http://127.0.0.1:5000/api/events/{{ camera }}/{{ label }}/create"
+    method: post
+    content_type: application/json
+    payload: '{"duration": {{ duration | int(30) }}, "include_recording": true}'
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml

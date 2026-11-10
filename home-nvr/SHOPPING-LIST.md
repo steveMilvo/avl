@@ -62,6 +62,34 @@ An Intel CPU is the easy choice: its integrated GPU handles both video decoding 
 no separate accelerator is needed for this many cameras. Connect the mini PC to the router by cable if
 at all possible; over Wi-Fi every camera's recording depends on that one link.
 
+## Alarm sensors (optional)
+
+For the alarm layer in the README. Everything is Zigbee, so it pairs with the one dongle and needs no
+cabling. Counts suit a three-bedroom house; adjust to your doors and rooms.
+
+| Item | Model | Qty | Approx. each |
+|---|---|---|---|
+| Zigbee USB dongle | Sonoff ZBDongle-E ("Dongle Plus V2"). One only; it is the hub | 1 | $35-45 |
+| USB 2 extension lead | 1 m, to get the dongle away from the PC and its drive | 1 | $8 |
+| Motion sensor (PIR) | Aqara P1 (RTCGQ14LM) or Sonoff SNZB-03P | 4 | $20-35 |
+| Door / window contact | Aqara (MCCGQ11LM) or Sonoff SNZB-04P | 4-6 | $15-25 |
+| Siren | Heiman HS2WD-E (mains with battery backup) | 1 | $45-60 |
+| Smoke alarm (optional) | Heiman HS1SA-E or Aqara JY-GZ-01AQ, as a second layer beside your compliant alarms | 1-2 | $35-50 |
+| Leak sensor (optional) | Aqara SJCGQ11LM, for laundry and under sinks | 1-2 | $20-30 |
+| Smart plug (optional) | Any Zigbee plug. Extends the mesh to far rooms and can switch a lamp when the alarm trips | 1-2 | $20-30 |
+| Spare batteries | CR2450 for Aqara motion, CR2032/CR1632 for contacts, per the listings | a few | $10 |
+
+A typical set of dongle, four motion sensors, four contacts and a siren comes to about $250-300.
+
+Placement: contacts on every external door and any easily reached window; motion sensors in the
+hallway and main living area, in a corner about 2.2 m up, facing across the room and away from windows
+and heaters. Battery sensors only talk to the mesh, so a house larger than about 10 m from the dongle
+needs one or two mains-powered Zigbee devices (the siren or a smart plug) in between.
+
+Check each listing says **Zigbee**, not Wi-Fi or Bluetooth: the same models are often sold in several
+versions. Zigbee smoke detectors add alerts to your phone but do not replace the hard-wired or
+compliant smoke alarms your home is required to have.
+
 ## Example basket: four cameras
 
 | Item | Qty | Approx. |

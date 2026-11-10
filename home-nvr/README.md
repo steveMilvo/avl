@@ -14,6 +14,8 @@ This folder is independent of the LoadLab code in the rest of the repository.
 | `.env.example` | Timezone, storage location and the camera login |
 | `scripts/setup.sh` | First-time setup and start |
 | `scripts/remote-access.sh` | Roaming access with a trusted HTTPS address |
+| `docker-compose.alarm.yml`, `alarm/` | Optional alarm layer: sensors, siren, arm/disarm |
+| `scripts/setup-alarm.sh` | Installs and starts the alarm layer |
 | `SHOPPING-LIST.md` | Cameras, switch, cabling, mini PC and storage |
 
 ## How it fits together
@@ -111,6 +113,65 @@ Avoid forwarding port 8971 from the router to the internet. If you need access f
 run Tailscale, put Frigate behind a reverse proxy with a real certificate instead; see Frigate's
 [reverse proxy guide](https://docs.frigate.video/guides/reverse_proxy).
 
+## 6. Alarm system (optional)
+
+Adds battery-powered motion sensors, door and window contacts and a siren, with arming and disarming
+from your phone. Three more containers run beside Frigate:
+
+| Part | Job |
+|---|---|
+| Zigbee2MQTT | Talks to the sensors and siren through a Zigbee USB dongle |
+| Mosquitto | Message broker that connects everything |
+| Home Assistant + Alarmo | The alarm panel: arm modes, entry and exit delays, siren, phone alerts |
+
+### Install
+
+1. Plug the Zigbee dongle into the mini PC. Use a short USB extension lead and a USB 2 port; USB 3
+   ports and drives sitting next to the dongle cut its range badly.
+2. Run:
+
+   ```bash
+   ./scripts/setup-alarm.sh
+   ```
+
+   It finds the dongle, generates the passwords, connects Frigate to the broker, starts the containers
+   and prints the addresses and logins used in the next steps.
+
+### Finish in the browser
+
+1. **Home Assistant**, `http://<mini-pc-ip>:8123`: create your account.
+2. Settings > Devices & services > **Add integration**, three times:
+   - **MQTT**: enter the broker details the script printed. Sensors then appear automatically.
+   - **Frigate**: URL `http://127.0.0.1:5000`. Adds the cameras and their person/car detections.
+   - **Alarmo**: adds the alarm panel.
+3. **Pair the sensors**, `http://<mini-pc-ip>:8080` (enter the token the script printed): click
+   **Permit join**, then hold each sensor's pairing button until it appears. Name each one by location,
+   for example `hall_motion` or `back_door`. Pair mains-powered devices such as the siren first, then
+   pair each battery sensor in the spot where it will live.
+4. **Set up the alarm** in the Alarmo panel in the Home Assistant sidebar:
+   - Sensors: add each one and tick the modes it belongs to. Typically door and window contacts are in
+     both **Armed away** and **Armed home**, and indoor motion sensors in **Armed away** only, so you
+     can move around the house at night with the doors still protected.
+   - General: set exit and entry delays (30 seconds is usual) and a PIN.
+   - Actions: on **Triggered**, switch the siren on and send a notification to your phone.
+5. **Link sensors to cameras**: Settings > Automations > Blueprints > **Sensor trip records a camera
+   clip**. Choose the sensors, type the Frigate camera name that covers the same area, and save. When
+   one of those sensors trips while armed, Frigate saves a 30-second clip and files it as an alert,
+   even if the camera itself detected nothing. Make one per area.
+
+### On your phone
+
+Run `./scripts/remote-access.sh` again. It now also prints an address for Home Assistant. Install the
+Home Assistant app, sign in with that address, and you get the arm/disarm panel, push alerts, and
+presence, so automations can arm the alarm when everyone has left.
+
+### What to expect from it
+
+This is a self-monitored alarm. It depends on the mini PC, mains power and your internet connection,
+nobody is called if it goes off, and insurers may not treat it as a monitored system. A UPS on the
+mini PC, switch and router keeps it running through a power cut. Test every sensor after pairing, and
+again every few months: battery sensors report their battery level in Home Assistant.
+
 ## Storage and retention
 
 `config/config.yml` keeps all footage for 3 days, footage with motion for 14 days, and clips of people
@@ -144,11 +205,14 @@ docker compose restart frigate
 docker compose pull && docker compose up -d
 ```
 
-The last one upgrades Frigate. Read the release notes first for major versions, and back up
-`config/` (it holds the configuration and the event database).
+The last one upgrades everything that is installed. Read the release notes first for major versions, and back up
+`config/` (Frigate's configuration and event database) and `data/` (the alarm layer's settings and
+the paired sensors).
 
 ## Status
 
-The Compose file and scripts have been syntax-checked, and the configuration was written against the
-Frigate 0.18.2 schema and documentation. It has not been run on a physical mini PC with cameras, so
-treat the first start as a commissioning step and check `docker compose logs frigate` for errors.
+Nothing here has been run on a physical mini PC with cameras or sensors. What has been checked: the
+Compose files merge and validate, the scripts pass a syntax check, `setup-alarm.sh` was dry-run with
+Docker stubbed out, and the configuration files were written against the Frigate 0.18.2 and
+Zigbee2MQTT 2.14 schemas. Treat the first start as a commissioning step and read
+`docker compose logs` for errors.
