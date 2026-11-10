@@ -1,0 +1,29 @@
+# Home NVR: Frigate (recorder, AI detection, web UI / PWA) with its bundled go2rtc.
+# Start with ./scripts/setup.sh, which also writes docker-compose.override.yml for
+# GPU passthrough when the mini PC has one.
+services:
+  frigate:
+    container_name: frigate
+    image: ghcr.io/blakeblackshear/frigate:${FRIGATE_IMAGE_TAG:-stable}
+    restart: unless-stopped
+    stop_grace_period: 30s
+    # Frame buffers live in shared memory. 512 MB covers about 6 cameras detecting
+    # at 720p; raise it if Frigate exits with "Bus error".
+    shm_size: "512mb"
+    env_file: .env
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./config:/config
+      - ${STORAGE_PATH:-./storage}:/media/frigate
+      - type: tmpfs # recording segments are assembled in RAM before they hit the disk
+        target: /tmp/cache
+        tmpfs:
+          size: 1000000000
+    ports:
+      - "8971:8971" # web UI and API, HTTPS with login
+      - "8555:8555/tcp" # WebRTC live view
+      - "8555:8555/udp"
+      # Port 5000 (UI without login) and 8554 (RTSP restream) are deliberately
+      # not published. Add "127.0.0.1:8554:8554" if another local app needs the feeds.

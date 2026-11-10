@@ -6,3 +6,10 @@ coverage/
 .vite/
 *.tsbuildinfo
 dist-single/
+
+# home-nvr: secrets, machine-specific overrides, recordings and Frigate's runtime files
+home-nvr/.env
+home-nvr/docker-compose.override.yml
+home-nvr/storage/
+home-nvr/config/*
+!home-nvr/config/config.yml

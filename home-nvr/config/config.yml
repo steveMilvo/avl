@@ -1,0 +1,120 @@
+# Frigate configuration for the home NVR. Written for Frigate 0.18.
+# Full reference: https://docs.frigate.video/configuration/reference
+#
+# Everything here can also be changed in the web UI under Settings, which rewrites
+# this file. The easiest way to add a camera is Settings > Camera management >
+# Add Camera; the commented example at the bottom shows the YAML it produces.
+
+mqtt:
+  enabled: false # only needed for Home Assistant
+
+# Login is required on port 8971. The admin password is printed in the container
+# log on first start: docker logs frigate
+auth:
+  enabled: true
+
+# Frigate serves HTTPS on 8971 with a self-signed certificate. Roaming access goes
+# through Tailscale, which supplies a trusted certificate (see README).
+tls:
+  enabled: true
+
+# Video decoding uses the GPU when one is passed through (setup.sh handles that).
+ffmpeg:
+  hwaccel_args: auto
+
+# Object detection runs on the CPU through OpenVINO by default, which is enough for
+# a few cameras. On an Intel mini PC (N100/N150, Core) move it to the integrated GPU
+# by uncommenting the block below.
+# detectors:
+#   ov:
+#     type: openvino
+#     device: GPU
+# model:
+#   width: 300
+#   height: 300
+#   input_tensor: nhwc
+#   input_pixel_format: bgr
+#   path: /openvino-model/ssdlite_mobilenet_v2.xml
+#   labelmap_path: /openvino-model/coco_91cl_bkgr.txt
+
+detect:
+  enabled: true
+  fps: 5
+
+objects:
+  track:
+    - person
+    - car
+    - dog
+    - cat
+
+# Retention. Everything is kept for 3 days, footage with motion for 14 days, and
+# clips of people or vehicles for 30 days. Frigate deletes the oldest footage on
+# its own when the disk fills.
+record:
+  enabled: true
+  continuous:
+    days: 3
+  motion:
+    days: 14
+  alerts:
+    retain:
+      days: 30
+      mode: motion
+  detections:
+    retain:
+      days: 30
+      mode: motion
+
+snapshots:
+  enabled: true
+  retain:
+    default: 30
+
+# Push notifications to the installed app. Needs the trusted HTTPS address from
+# Tailscale. Turn on under Settings > Notifications, then enable per device.
+# notifications:
+#   enabled: true
+#   email: you@example.com
+
+# ---------------------------------------------------------------------------
+# Cameras. Leave empty and use the Add Camera wizard, or copy this pattern.
+# Each camera gives two streams: the main stream is recorded untouched, and the
+# low-resolution substream is used for detection to keep CPU load down.
+# ---------------------------------------------------------------------------
+cameras: {}
+
+# go2rtc:
+#   streams:
+#     # Dahua / Amcrest / Imou / EmpireTech
+#     front_door:
+#       - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.1.50:554/cam/realmonitor?channel=1&subtype=0
+#     front_door_sub:
+#       - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.1.50:554/cam/realmonitor?channel=1&subtype=1
+#     # Hikvision / Annke:  .../Streaming/Channels/101 (main) and /102 (sub)
+#     # TP-Link Tapo:       .../stream1 (main) and /stream2 (sub)
+#     # Reolink, 5 MP and below (HTTP must be enabled on the camera):
+#     #   ffmpeg:http://192.168.1.51/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=USER&password=PASS#video=copy#audio=copy#audio=opus
+#     #   ffmpeg:http://192.168.1.51/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=USER&password=PASS
+#
+# cameras:
+#   front_door:
+#     ffmpeg:
+#       output_args:
+#         record: preset-record-generic-audio-copy
+#       inputs:
+#         - path: rtsp://127.0.0.1:8554/front_door
+#           input_args: preset-rtsp-restream
+#           roles:
+#             - record
+#         - path: rtsp://127.0.0.1:8554/front_door_sub
+#           input_args: preset-rtsp-restream
+#           roles:
+#             - detect
+#     live:
+#       streams:
+#         Main: front_door
+#         Sub: front_door_sub
+
+# Schema version this file is written for. Frigate migrates it on upgrade; leave it alone.
+version: 0.18-0
