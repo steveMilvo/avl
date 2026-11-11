@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Pit Notes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=Caveat:wght@500;700&family=Courier+Prime:wght@400;700&display=swap">
+<style>
+/* Layout: a pit-room wall. Felt letterboard menu on the left, one sheet of pink butcher paper on the right. */
+:root {
+  color-scheme: dark;
+  --soot: #120e0b;        /* room */
+  --steel: #1f1915;       /* smoker steel, panels */
+  --seam: #3a2f27;        /* welds, borders */
+  --felt: #0b0908;        /* letterboard */
+  --chalk: #f1e8da;       /* letters, text on dark */
+  --ash: #a3968a;         /* muted text on dark */
+  --paper: #dcbc9f;       /* peach butcher paper */
+  --paper-lo: #cfab8b;    /* paper shade */
+  --ink: #1e1511;         /* text on paper */
+  --ink-soft: #5b4638;    /* muted text on paper */
+  --ember: #f0701f;       /* fire */
+  --brick: #8c2415;       /* stamp red, pen ticks */
+  --display: "Alfa Slab One", "Rockwell Extra Bold", "Rockwell", Georgia, serif;
+  --sign: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --type: "Courier Prime", "Courier New", Courier, monospace;
+  --hand: "Caveat", "Segoe Print", "Bradley Hand", cursive;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--soot);
+  color: var(--chalk);
+  font: 400 16px/1.5 var(--body);
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--soot);
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+#embers { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.room {
+  position: relative; z-index: 1;
+  max-width: 1240px; margin: 0 auto;
+  padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 20px;
+}
+
+/* masthead */
+.mast { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 32px; }
+.mast h1 {
+  margin: 0; font: 400 clamp(2.6rem, 8vw, 4.6rem)/0.9 var(--display);
+  letter-spacing: 0.01em; color: var(--chalk);
+  text-shadow: 0 2px 0 var(--felt), 0 0 38px color-mix(in srgb, var(--ember) 45%, transparent);
+}
+.mast h1 span { color: var(--ember); }
+.mast p { margin: 10px 0 0; max-width: 46ch; color: var(--ash); }
+.rig { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--seam); background: var(--steel); }
+.seg button {
+  border: 0; background: none; padding: 8px 12px;
+  font: 600 0.82rem/1 var(--sign); letter-spacing: 0.09em; text-transform: uppercase; color: var(--ash);
+}
+.seg button[aria-pressed="true"] { background: var(--chalk); color: var(--felt); }
+.fire-btn {
+  border: 1px solid var(--seam); background: var(--steel); padding: 8px 12px;
+  font: 600 0.82rem/1 var(--sign); letter-spacing: 0.09em; text-transform: uppercase; color: var(--ash);
+}
+.fire-btn[aria-pressed="true"] { color: var(--ember); border-color: var(--ember); }
+
+/* shell */
+.shell { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 24px; align-items: start; }
+
+/* letterboard */
+.board {
+  position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px);
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 9px, color-mix(in srgb, var(--chalk) 7%, transparent) 9px 10px),
+    var(--felt);
+  border: 10px solid var(--steel);
+  box-shadow: 0 0 0 1px var(--seam), inset 0 0 0 1px var(--seam), 0 18px 40px -18px #000;
+  padding: 18px 16px 20px;
+}
+.board h2 {
+  margin: 18px 0 6px; font: 700 0.74rem/1 var(--sign); letter-spacing: 0.24em;
+  text-transform: uppercase; color: var(--ember);
+}
+.board h2:first-child { margin-top: 0; }
+.board button {
+  display: flex; width: 100%; align-items: baseline; justify-content: space-between; gap: 10px;
+  border: 0; background: none; padding: 5px 4px; text-align: left;
+  font: 600 1.14rem/1.1 var(--sign); letter-spacing: 0.13em; text-transform: uppercase; color: var(--chalk);
+}
+.board button small { font: 600 0.72rem/1 var(--sign); letter-spacing: 0.1em; color: var(--ash); white-space: nowrap; }
+.board button:hover { color: var(--ember); }
+.board button[aria-current="page"] { background: var(--chalk); color: var(--felt); }
+.board button[aria-current="page"] small { color: var(--ink-soft); }
+
+/* butcher paper */
+.paper {
+  position: relative; min-width: 0;
+  background:
+    radial-gradient(90px 60px at 88% 7%, color-mix(in srgb, var(--paper-lo) 85%, transparent), transparent 70%),
+    radial-gradient(140px 90px at 6% 92%, color-mix(in srgb, var(--paper-lo) 70%, transparent), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .12 0 0 0 0 .08 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E"),
+    var(--paper);
+  color: var(--ink);
+  padding: clamp(18px, 4vw, 40px);
+  box-shadow: 0 30px 60px -30px #000;
+  clip-path: polygon(0 6px, 3% 0, 9% 5px, 17% 1px, 26% 6px, 38% 2px, 47% 6px, 58% 1px, 69% 5px, 80% 0, 90% 5px, 100% 1px, 100% 100%, 0 100%);
+}
+.paper:focus { outline: none; }
+.head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: start; }
+.kicker { font: 700 0.76rem/1 var(--sign); letter-spacing: 0.22em; text-transform: uppercase; color: var(--brick); margin: 0 0 8px; }
+.head h2 { margin: 0; font: 400 clamp(1.9rem, 5vw, 3rem)/1 var(--display); text-wrap: balance; }
+.lede { margin: 12px 0 0; max-width: 58ch; color: var(--ink-soft); }
+.scrap {
+  border: 0; padding: 5px 5px 0; background: var(--chalk); width: 132px; transform: rotate(2.5deg);
+  box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--ink) 70%, transparent);
+  display: flex; flex-direction: column; gap: 0; transition: transform .15s;
+}
+.scrap:hover { transform: rotate(0deg) scale(1.04); }
+.scrap img { display: block; width: 100%; height: 96px; object-fit: cover; object-position: top; }
+.scrap span { font: 700 1.05rem/1.5 var(--hand); color: var(--ink); text-align: center; }
+.scraps { display: flex; gap: 10px; }
+.scraps .scrap:nth-child(2) { transform: rotate(-3deg); margin-top: 10px; }
+.scraps .scrap:nth-child(2):hover { transform: rotate(0deg) scale(1.04); }
+
+.tabs { display: inline-flex; margin-top: 22px; border: 2px solid var(--ink); }
+.tabs button {
+  border: 0; background: none; padding: 8px 14px; color: var(--ink);
+  font: 700 0.86rem/1 var(--sign); letter-spacing: 0.12em; text-transform: uppercase;
+}
+.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+/* batch panel */
+.batch {
+  margin-top: 22px; display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 8px 28px; align-items: center;
+  border-block: 2px solid var(--ink); padding-block: 16px;
+}
+.dial { width: 100%; max-width: 250px; touch-action: none; cursor: grab; display: block; }
+.dial:active { cursor: grabbing; }
+.dial text { font: 700 11px var(--sign); fill: var(--ink); text-anchor: middle; dominant-baseline: middle; }
+.dial .face { fill: color-mix(in srgb, var(--chalk) 55%, var(--paper)); stroke: var(--ink); stroke-width: 3; }
+.dial .tick { stroke: var(--ink); stroke-width: 2; }
+.dial .needle { stroke: var(--brick); stroke-width: 4; stroke-linecap: round; transition: transform .18s ease-out; }
+.dial .hub { fill: var(--ink); }
+.dial .hot { fill: none; stroke: var(--ember); stroke-width: 5; }
+.readout { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.readout .big { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+.readout .x { font: 400 clamp(2.4rem, 7vw, 3.6rem)/0.9 var(--display); }
+.readout .tot { font: 700 1rem/1.2 var(--type); color: var(--ink-soft); }
+.label { font: 700 0.74rem/1 var(--sign); letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chips button, .ghost {
+  border: 1.5px solid var(--ink); background: none; color: var(--ink); padding: 6px 10px; min-width: 42px;
+  font: 700 0.95rem/1 var(--type);
+}
+.chips button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.chips button:hover, .ghost:hover { background: color-mix(in srgb, var(--ink) 12%, transparent); }
+.chips button[aria-pressed="true"]:hover { background: var(--ink); }
+.exact { display: inline-flex; align-items: center; gap: 6px; font: 700 0.95rem/1 var(--type); }
+.exact input, .pin input {
+  width: 4.6em; border: 0; border-bottom: 2px solid var(--ink); background: color-mix(in srgb, var(--chalk) 45%, transparent);
+  color: var(--ink); padding: 5px 4px; font: 700 0.95rem/1 var(--type);
+}
+
+/* ingredients */
+.cols { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px 40px; margin-top: 24px; }
+.cols.solo { grid-template-columns: minmax(0, 1fr); }
+.sec h3 {
+  margin: 0 0 4px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  font: 700 0.86rem/1 var(--sign); letter-spacing: 0.22em; text-transform: uppercase;
+}
+.sec h3 button { border: 0; background: none; padding: 0; text-decoration: underline; color: var(--ink-soft);
+  font: 600 0.74rem/1 var(--sign); letter-spacing: 0.12em; text-transform: uppercase; }
+.sub { margin: 18px 0 2px; font: 700 0.78rem/1 var(--sign); letter-spacing: 0.18em; text-transform: uppercase; color: var(--brick); }
+.ings { list-style: none; margin: 0; padding: 0; }
+.ings li {
+  display: grid; grid-template-columns: 26px minmax(6.4em, auto) minmax(0, 1fr); gap: 4px 10px; align-items: baseline;
+  padding: 8px 0; border-bottom: 1px dashed color-mix(in srgb, var(--ink) 38%, transparent);
+}
+.tickbox {
+  width: 22px; height: 22px; border: 2px solid var(--ink); background: none; padding: 0; align-self: center;
+  position: relative; color: var(--brick);
+}
+.tickbox[aria-checked="true"]::after {
+  content: "✓"; position: absolute; left: 1px; bottom: -4px; font: 700 2rem/1 var(--hand); transform: rotate(-6deg);
+}
+.qty {
+  border: 0; background: none; padding: 0; text-align: left; color: var(--ink);
+  font: 700 1.05rem/1.3 var(--type); font-variant-numeric: tabular-nums;
+  text-decoration: underline dotted color-mix(in srgb, var(--ink) 50%, transparent); text-underline-offset: 4px;
+}
+.qty.plain { text-decoration: none; cursor: default; }
+.qty:not(.plain):hover { color: var(--brick); }
+.nm { min-width: 0; font-weight: 500; }
+.nm small { display: block; font: 400 0.84rem/1.35 var(--body); color: var(--ink-soft); }
+.nm .alt { font: 400 0.84rem/1 var(--type); color: var(--ink-soft); white-space: nowrap; }
+li.done .nm, li.done .qty { text-decoration: line-through; text-decoration-color: var(--brick); opacity: 0.55; }
+.pin { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font: 700 0.95rem/1 var(--type); }
+.flag { color: var(--brick); font-weight: 600; }
+.flag button { border: 0; background: none; padding: 0; color: inherit; text-decoration: underline; font: inherit; }
+.hint { margin: 10px 0 0; font-size: 0.86rem; color: var(--ink-soft); }
+
+/* method */
+.steps { list-style: none; margin: 0; padding: 0; counter-reset: s; display: flex; flex-direction: column; gap: 14px; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; }
+.steps li::before { content: counter(s); font: 400 1.5rem/1 var(--display); color: var(--brick); }
+.steps p { margin: 0; max-width: 60ch; }
+.timer { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font: 700 0.95rem/1.2 var(--type); }
+.timer .clock { font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.timer.up .clock { color: var(--brick); }
+.hand { font: 700 1.5rem/1.2 var(--hand); color: var(--ink); margin: 16px 0 0; transform: rotate(-1deg); max-width: 34ch; }
+.hand cite { display: block; font: 600 0.72rem/1.6 var(--sign); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); }
+.stamp {
+  display: inline-block; margin-top: 4px; padding: 6px 10px; border: 2px solid var(--brick); color: var(--brick);
+  font: 700 0.78rem/1.2 var(--sign); letter-spacing: 0.16em; text-transform: uppercase; transform: rotate(-1.5deg);
+}
+.plain-note { margin: 10px 0 0; max-width: 60ch; color: var(--ink-soft); }
+
+/* note viewer */
+dialog { border: 0; padding: 0; background: var(--steel); color: var(--chalk); max-width: min(94vw, 900px); max-height: 92vh; box-shadow: 0 30px 80px #000; }
+dialog::backdrop { background: color-mix(in srgb, var(--felt) 86%, transparent); }
+.dlg-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px;
+  font: 600 0.82rem/1.2 var(--sign); letter-spacing: 0.14em; text-transform: uppercase; }
+.dlg-bar button { border: 1px solid var(--seam); background: none; padding: 6px 12px; text-transform: uppercase; letter-spacing: 0.14em; }
+dialog img { display: block; max-width: 100%; max-height: calc(92vh - 50px); margin: 0 auto; }
+
+footer { color: var(--ash); font-size: 0.86rem; max-width: 70ch; }
+
+@media (max-width: 860px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .board { position: static; display: flex; gap: 4px 6px; overflow-x: auto; padding: 12px; border-width: 6px; align-items: center; }
+  .board h2 { margin: 0 4px 0 10px; white-space: nowrap; }
+  .board h2:first-child { margin-left: 0; }
+  .board button { width: auto; white-space: nowrap; padding: 6px 8px; font-size: 1rem; }
+  .board button small { display: none; }
+  .cols { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 620px) {
+  .batch { grid-template-columns: minmax(0, 1fr); justify-items: start; }
+  .head { grid-template-columns: minmax(0, 1fr); }
+  .scrap { width: 112px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scrap, .dial .needle { transition: none; }
+}
+</style>
+</head>
+<body>
+<canvas id="embers" aria-hidden="true"></canvas>
+<div class="room">
+  <header class="mast">
+    <div>
+      <h1>Pit <span>Notes</span></h1>
+      <p>Eleven handwritten pages of sauces, rubs and injections, typed up as written. Turn the dial and every quantity follows.</p>
+    </div>
+    <div class="rig">
+      <div class="seg" role="group" aria-label="Show quantities in">
+        <button type="button" id="mode-kitchen" data-mode="kitchen">Cups &amp; spoons</button>
+        <button type="button" id="mode-metric" data-mode="metric">Metric</button>
+      </div>
+      <div class="seg" role="group" aria-label="Measuring set">
+        <button type="button" id="set-au" data-set="au" title="250 ml cup, 20 ml tablespoon">AU spoons</button>
+        <button type="button" id="set-us" data-set="us" title="237 ml cup, 15 ml tablespoon">US spoons</button>
+      </div>
+      <button type="button" class="fire-btn" id="fire" aria-pressed="false">Fire sound: off</button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <nav class="board" id="board" aria-label="Recipes"></nav>
+    <main class="paper" id="sheet" tabindex="-1"></main>
+  </div>
+
+  <footer>Quantities are exactly what the notes say. Where a note has no amounts or no method, the page says so and adds nothing.</footer>
+</div>
+
+<dialog id="viewer" aria-label="Original note">
+  <div class="dlg-bar"><span id="viewer-cap"></span><button type="button" id="viewer-close">Close</button></div>
+  <img id="viewer-img" alt="">
+</dialog>
+
+<script>
+(function () {
+'use strict';
+
+/* ---------- the notes, typed up ---------- */
+var I = function (q, u, name, note, extra) { var o = { q: q, u: u, name: name, note: note || '' }; if (extra) for (var k in extra) o[k] = extra[k]; return o; };
+var RECIPES = [
+  { id: 'southern-comfort-sauce', group: 'Sauces', name: 'Southern Comfort BBQ Sauce', tag: '1 bottle', pages: [10, 1],
+    lede: 'Mustard, molasses and a half cup of Southern Comfort over one big bottle of ketchup. Written out twice in the notes, with the same quantities both times.',
+    total: 'vol',
+    ings: [
+      I(1, 'cup', 'Yellow mustard'), I(0.5, 'cup', 'Southern Comfort'), I(0.5, 'cup', 'Molasses'),
+      I(0.5, 'cup', 'Cider vinegar'), I(0.25, 'cup', 'Dark brown sugar', 'packed'), I(0.25, 'cup', 'Worcestershire sauce'),
+      I(2, 'tbsp', 'Fresh lemon juice'), I(2, 'tbsp', 'Soy sauce'), I(2, 'tsp', 'Granulated garlic'),
+      I(2, 'tsp', 'Black pepper'), I(1, 'tsp', 'Crushed red pepper'), I(1, 'tsp', 'Cayenne pepper'), I(1, 'tsp', 'Salt'),
+      I(1, 'bottle', 'Tomato sauce / ketchup', '28 oz bottle')
+    ],
+    stamp: 'No method on the note' },
+
+  { id: 'two-litre-sauce', group: 'Sauces', name: 'Two-Litre BBQ Sauce', tag: '2 L base', pages: [2],
+    lede: 'The big-pot sauce, built on two litres of tomato sauce with molasses, vinegar and liquid smoke. The note is headed “2 litres” and has no other name.',
+    total: 'vol',
+    ings: [
+      I(1, 'tbsp', 'Black pepper', '', { sub: 'Dry' }), I(4, 'tsp', 'Ground coriander'), I(4, 'tsp', 'Dry mustard powder'),
+      I(2, 'tsp', 'Ground ginger'), I(2, 'tsp', 'Granulated garlic'), I(2, 'tsp', 'Cayenne pepper'), I(1, 'tsp', 'Nutmeg'),
+      I(2, 'l', 'Tomato sauce / ketchup', '', { sub: 'Wet' }),
+      I(550, 'ml', 'Tomato paste', '', { flag: 'Hard to read on the note. It could be 150 ml.', flagPage: 2 }),
+      I(2, 'cup', 'White vinegar'), I(2, 'cup', 'Molasses'), I(0.5, 'cup', 'Worcestershire sauce'), I(4, 'tbsp', 'Liquid smoke')
+    ],
+    steps: [
+      { t: 'Combine all the dry ingredients in a non-reactive saucepan.' },
+      { t: 'Add all the wet ingredients, blending well.' },
+      { t: 'Bring to the boil.' },
+      { t: 'Reduce the heat and simmer for about 30 minutes, stirring occasionally.', min: 30 }
+    ],
+    hand: 'Good for Beef, Pork Ribs & chicken' },
+
+  { id: 'apricot-sauce', group: 'Sauces', name: 'Apricot BBQ Sauce', tag: 'rough note', pages: [8],
+    lede: 'A list more than a recipe. Only the jam has a number against it.',
+    ings: [
+      I(null, null, 'Home Brand tomato sauce', '“8–12 hrs” is written beside it'),
+      I(3, 'count', 'Apricot jam', '', { unit1: 'jar', unitN: 'jars' }),
+      I(null, null, 'Black pepper'), I(null, null, 'Paprika'), I(null, null, 'Onion powder')
+    ],
+    stamp: 'Amounts not written down',
+    extra: 'Further down the same scrap, on their own: “Gravy – plain” and “Liquid smoke”.' },
+
+  { id: 'meat-rub', group: 'Rubs', name: 'Rub for Meat', tag: 'spoon or scale', pages: [3, 11],
+    lede: 'One rub, written two ways: by the cup and spoon, and again by weight for mixing in bulk. The bulk page works a ×10 column down the side.',
+    variants: [
+      { key: 'spoon', label: 'By cup & spoon', ings: [
+        I(0.5, 'cup', 'Brown sugar'), I(0.25, 'cup', 'Paprika'), I(4, 'tbsp', 'Coarse salt'), I(3, 'tbsp', 'Black pepper'),
+        I(2, 'tsp', 'Onion powder', 'or onion salt'), I(2, 'tsp', 'Garlic powder', 'or garlic salt'),
+        I(2, 'tsp', 'Celery seed'), I(1, 'tsp', 'Cayenne pepper')
+      ] },
+      { key: 'weight', label: 'By weight (bulk)', total: 'weight', stops: 10, ings: [
+        I(65, 'g', 'Brown sugar'), I(26, 'g', 'Paprika'), I(80, 'g', 'Salt'), I(27, 'g', 'Ground pepper'),
+        I(22, 'g', 'Onion powder'), I(16, 'g', 'Garlic powder'), I(7, 'g', 'Celery seeds'), I(5, 'g', 'Cayenne pepper')
+      ] }
+    ],
+    extra: 'The bulk spice shopping list on another page also names Chinese 5 spice. Neither version of the rub gives an amount for it.' },
+
+  { id: 'brisket-injection', group: 'Injections & marinades', name: 'Beef Brisket Injection', tag: '2 cups', pages: [6, 5],
+    lede: 'Four ingredients, also written out twice.',
+    total: 'vol',
+    ings: [
+      I(2, 'cup', 'Beef base / stock'), I(1, 'tbsp', 'Worcestershire sauce'), I(1, 'tbsp', 'Soy sauce'),
+      I(1, 'tsp', 'Accent seasoning (MSG)', 'or substitute adobo seasoning')
+    ],
+    stamp: 'No method on the note' },
+
+  { id: 'pork-injection', group: 'Injections & marinades', name: 'Pork Injection', tag: 'rough note', pages: [7],
+    lede: 'From a page headed “Injection Marinades”. The pork column has four ingredients and no amounts. The beef column was left blank.',
+    ings: [ I(null, null, 'Apple juice'), I(null, null, 'Apple cider vinegar'), I(null, null, 'Thai chilli garlic sauce'), I(null, null, 'Onion powder') ],
+    stamp: 'Amounts not written down' },
+
+  { id: 'marinade', group: 'Injections & marinades', name: 'Sherry & Five Spice Marinade', tag: '⅓ cup sherry', pages: [4],
+    lede: 'Headed just “Marinade”. Sherry, honey, soy and brown vinegar, with five spice and hot chilli sauce.',
+    total: 'vol',
+    ings: [
+      I(1 / 3, 'cup', 'Sherry'), I(0.25, 'tsp', 'Five spice'), I(1, 'tsp', 'Garlic'), I(1, 'tsp', 'Ginger'),
+      I(1, 'tbsp', 'Hot chilli sauce'), I(2, 'tbsp', 'Soy sauce'), I(4, 'tbsp', 'Brown vinegar'),
+      I(4, 'tbsp', 'BBQ sauce'), I(4, 'tbsp', 'Honey')
+    ],
+    stamp: 'No method on the note' },
+
+  { id: 'fried-chicken', group: 'Chicken', name: 'Southern Fried Chicken', tag: '8 pieces', pages: [9],
+    lede: 'A boiled brine, a night in the fridge, then a long buttermilk soak. The note covers the brine and the soak and stops there.',
+    ings: [
+      I(null, null, 'Black peppercorns', '', { sub: 'Brine', loose: 'a handful' }),
+      I(null, null, 'Thyme', '', { loose: 'a few sprigs' }),
+      I(4, 'count', 'Fresh bay leaves'), I(4, 'count', 'Garlic cloves'),
+      I(100, 'g', 'Salt'), I(100, 'g', 'Brown sugar'),
+      I(400, 'ml', 'Water', 'to boil the brine'), I(400, 'ml', 'Water', 'added off the heat'),
+      I(4, 'count', 'Drumsticks', 'cut slits in', { sub: 'Chicken' }), I(4, 'count', 'Thighs'),
+      I(null, null, 'Buttermilk', 'no amount given', { sub: 'Soak' })
+    ],
+    steps: [
+      { t: 'Put the peppercorns, thyme, bay leaves, garlic, salt, brown sugar and the first lot of water in a pot. Stir over the flame until it boils.' },
+      { t: 'Take it off the heat, add the second lot of water and let it cool down completely.' },
+      { t: 'Cut slits in the drumsticks. Place the chicken in the brine and refrigerate overnight, at least 12 hours.', min: 720 },
+      { t: 'After brining, soak the chicken in buttermilk for at least 8 hours.', min: 480 }
+    ],
+    stamp: 'Note ends before the frying' },
+
+  { id: 'cook-day', group: 'Cook day', name: 'Cook-Day Run Sheet', tag: 'checklist', pages: [4], list: true,
+    lede: 'The shopping list written under the marinade, in the order it was written. Most of it was already ticked.',
+    ings: [
+      I(null, null, 'Coke', '2 litres'), I(null, null, 'Apple juice', '2 litres'), I(null, null, 'Foil'), I(null, null, 'Cling wrap'),
+      I(null, null, 'Paper towel'), I(null, null, 'Serviettes'), I(null, null, 'Cabbage'), I(null, null, 'Carrot'),
+      I(null, null, 'Onion'), I(null, null, 'Apples'), I(null, null, 'Coleslaw dressing'), I(null, null, 'Hose couplings'), I(null, null, 'Seats')
+    ] }
+];
+
+/* ---------- measures ---------- */
+var SETS = { au: { tsp: 5, tbsp: 4, cup: 50 }, us: { tsp: 4.929, tbsp: 3, cup: 48 } }; /* ml per tsp; tsp per Tbs; tsp per cup */
+var KETCHUP_G = 794, KETCHUP_ML = 700; /* 28 oz bottle */
+var STOPS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 8, 10, 15, 20];
+var GLYPH = { '1/2': '½', '1/3': '⅓', '2/3': '⅔', '1/4': '¼', '3/4': '¾', '1/8': '⅛', '3/8': '⅜', '5/8': '⅝', '7/8': '⅞' };
+
+function store(k, v) { try { if (v === undefined) return JSON.parse(localStorage.getItem('pit.' + k)); localStorage.setItem('pit.' + k, JSON.stringify(v)); } catch (e) { return null; } }
+var prefs = store('prefs') || {};
+var state = { mode: prefs.mode === 'metric' ? 'metric' : 'kitchen', set: prefs.set === 'us' ? 'us' : 'au', id: null, pin: -1 };
+var saved = store('recipes') || {};   /* per recipe: { s: scale, v: variant, c: {i: true} } */
+var timers = store('timers') || {};   /* key -> end timestamp */
+function mem(id) { return saved[id] || (saved[id] = { s: 1, v: 0, c: {} }); }
+function persist() { store('recipes', saved); store('prefs', { mode: state.mode, set: state.set }); store('timers', timers); }
+
+function trim(n, d) { return String(+n.toFixed(d)); }
+/* nearest mixed fraction using the given denominators */
+function mixed(x, dens) {
+  var best = null;
+  dens.forEach(function (d) {
+    var n = Math.round(x * d), val = n / d;
+    if (!best || Math.abs(val - x) < Math.abs(best.val - x) - 1e-9) best = { n: n, d: d, val: val };
+  });
+  var whole = Math.floor(best.n / best.d + 1e-9), rem = best.n - whole * best.d, g = gcd(rem, best.d);
+  var f = rem ? GLYPH[(rem / g) + '/' + (best.d / g)] : '';
+  return { text: (whole || !f ? whole : '') + f, val: best.val };
+}
+function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+function mul(s) { return s === 0.25 ? '¼' : s === 0.5 ? '½' : s === 0.75 ? '¾' : s === 1.5 ? '1½' : trim(s, 2); }
+
+function metric(v, unit) {
+  if (unit === 'ml') {
+    if (v >= 1000) return trim(v / 1000, v >= 10000 ? 1 : 2) + ' L';
+    return (v < 20 ? trim(Math.round(v * 2) / 2, 1) : v < 100 ? Math.round(v) : Math.round(v / 5) * 5) + ' ml';
+  }
+  if (v >= 1000) return trim(v / 1000, v >= 10000 ? 1 : 2) + ' kg';
+  return (v < 20 ? trim(v, 1) : Math.round(v)) + ' g';
+}
+function spoons(tsp) {
+  var S = SETS[state.set], tries = [];
+  if (tsp >= S.cup / 4 - 1e-6) tries.push(['cup', S.cup, [2, 3, 4]]);
+  if (tsp >= S.tbsp - 1e-6) tries.push(['Tbs', S.tbsp, [2]]);
+  tries.push(['tsp', 1, tsp < 1 ? [2, 4, 8] : [2, 4]]);
+  var pick = null;
+  for (var i = 0; i < tries.length; i++) {
+    var m = mixed(tsp / tries[i][1], tries[i][2]), err = Math.abs(m.val * tries[i][1] - tsp) / tsp;
+    if (m.val > 0 && err <= 0.04) { pick = [m, tries[i][0]]; break; }
+    if (!pick || err < pick[2]) pick = [m, tries[i][0], err];
+  }
+  var unit = pick[1] === 'cup' && pick[0].val > 1 ? 'cups' : pick[1];
+  return (pick[0].text === '0' ? 'pinch' : pick[0].text + ' ' + unit);
+}
+function toTsp(ing) { var S = SETS[state.set]; return ing.u === 'tsp' ? ing.q : ing.u === 'tbsp' ? ing.q * S.tbsp : ing.q * S.cup; }
+function toMl(ing, s) {
+  if (ing.u === 'ml') return ing.q * s;
+  if (ing.u === 'l') return ing.q * 1000 * s;
+  if (ing.u === 'bottle') return KETCHUP_ML * ing.q * s;
+  if (ing.u === 'tsp' || ing.u === 'tbsp' || ing.u === 'cup') return toTsp(ing) * s * SETS[state.set].tsp;
+  return 0;
+}
+/* returns { main, alt } for one ingredient at scale s */
+function amount(ing, s) {
+  if (ing.q == null) return { main: ing.loose ? ing.loose + (s !== 1 ? ' ×' + mul(s) : '') : '', alt: '' };
+  var k, m;
+  switch (ing.u) {
+    case 'tsp': case 'tbsp': case 'cup': k = spoons(toTsp(ing) * s); m = metric(toMl(ing, s), 'ml'); break;
+    case 'ml': case 'l': k = m = metric(toMl(ing, s), 'ml'); break;
+    case 'g': k = m = metric(ing.q * s, 'g'); break;
+    case 'bottle': var b = mixed(ing.q * s, [2, 4]); k = b.text + ' × 28 oz'; m = metric(KETCHUP_G * ing.q * s, 'g'); break;
+    default: var c = mixed(ing.q * s, [2, 4]); k = m = c.text + (ing.unit1 ? ' ' + (c.val === 1 ? ing.unit1 : ing.unitN) : '');
+  }
+  return state.mode === 'metric' ? { main: m, alt: k === m ? '' : k } : { main: k, alt: k === m ? '' : m };
+}
+var UNIT_WORD = { tsp: 'tsp', tbsp: 'Tbs', cup: 'cup(s)', ml: 'ml', l: 'litres', g: 'g', bottle: 'bottle(s)', count: '' };
+
+/* ---------- rendering ---------- */
+var $ = function (id) { return document.getElementById(id); };
+var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+var sheet = $('sheet'), board = $('board');
+function recipe() { return RECIPES.filter(function (r) { return r.id === state.id; })[0] || RECIPES[0]; }
+function active(r) { var m = mem(r.id); return r.variants ? r.variants[m.v] || r.variants[0] : r; }
+function img(p) { return 'notes/p' + (p < 10 ? '0' : '') + p + '.jpg'; }
+
+function drawBoard() {
+  var h = '', g = '';
+  RECIPES.forEach(function (r) {
+    if (r.group !== g) { g = r.group; h += '<h2>' + esc(g) + '</h2>'; }
+    h += '<button type="button" data-go="' + r.id + '"' + (r.id === state.id ? ' aria-current="page"' : '') + '><span>' + esc(r.name) + '</span><small>' + esc(r.tag) + '</small></button>';
+  });
+  board.innerHTML = h;
+}
+
+function dialSvg(s) {
+  var h = '<svg class="dial" id="dial" viewBox="0 0 250 150" role="slider" tabindex="0" aria-label="Batch size" aria-valuemin="0.25" aria-valuemax="20" aria-valuenow="' + s + '" aria-valuetext="' + mul(s) + ' times the note">';
+  h += '<path class="face" d="M10 135 A115 115 0 0 1 240 135 Z"/>';
+  h += '<path class="hot" d="' + arc(STOPS.length - 4, STOPS.length - 1, 108) + '"/>';
+  STOPS.forEach(function (v, i) {
+    var a = ang(i), c = Math.cos(a), n = Math.sin(a);
+    h += '<line class="tick" x1="' + (125 + 96 * c).toFixed(1) + '" y1="' + (135 - 96 * n).toFixed(1) + '" x2="' + (125 + 108 * c).toFixed(1) + '" y2="' + (135 - 108 * n).toFixed(1) + '"/>';
+    h += '<text x="' + (125 + 82 * c).toFixed(1) + '" y="' + (135 - 82 * n).toFixed(1) + '">' + mul(v) + '</text>';
+  });
+  h += '<line class="needle" id="needle" x1="125" y1="135" x2="125" y2="48" style="transform-origin:125px 135px;transform:rotate(' + needleDeg(s) + 'deg)"/>';
+  h += '<circle class="hub" cx="125" cy="135" r="9"/></svg>';
+  return h;
+}
+function ang(i) { return Math.PI * 0.94 - (i / (STOPS.length - 1)) * Math.PI * 0.88; }
+function arc(i0, i1, r) {
+  var a = ang(i0), b = ang(i1);
+  return 'M' + (125 + r * Math.cos(a)).toFixed(1) + ' ' + (135 - r * Math.sin(a)).toFixed(1) + ' A' + r + ' ' + r + ' 0 0 1 ' + (125 + r * Math.cos(b)).toFixed(1) + ' ' + (135 - r * Math.sin(b)).toFixed(1);
+}
+function stopPos(s) { /* fractional index of a scale along the stops */
+  if (s <= STOPS[0]) return 0;
+  for (var i = 1; i < STOPS.length; i++) if (s <= STOPS[i]) return i - 1 + Math.log(s / STOPS[i - 1]) / Math.log(STOPS[i] / STOPS[i - 1]);
+  return STOPS.length - 1;
+}
+function needleDeg(s) { return -79.2 + (stopPos(s) / (STOPS.length - 1)) * 158.4; }
+
+function totalLine(v, s) {
+  if (v.total === 'vol') { var ml = 0; v.ings.forEach(function (g) { ml += toMl(g, s); }); return 'about ' + metric(ml, 'ml') + ' going into the pot'; }
+  if (v.total === 'weight') { var w = 0; v.ings.forEach(function (g) { w += g.q * s; }); return metric(w, 'g') + ' of rub'; }
+  return '';
+}
+
+function draw() {
+  var r = recipe(), m = mem(r.id), v = active(r), s = m.s, h = '';
+  var scalable = !r.list;
+  h += '<div class="head"><div><p class="kicker">' + esc(r.group) + '</p><h2>' + esc(r.name) + '</h2><p class="lede">' + esc(r.lede) + '</p></div><div class="scraps">';
+  r.pages.forEach(function (p, i) {
+    h += '<button type="button" class="scrap" data-note="' + p + '"><img src="' + img(p) + '" alt="Handwritten note, page ' + p + '" loading="lazy"><span>' + (i ? 'second copy' : 'the note') + '</span></button>';
+  });
+  h += '</div></div>';
+
+  if (r.variants) {
+    h += '<div class="tabs" role="group" aria-label="Version">';
+    r.variants.forEach(function (x, i) { h += '<button type="button" data-variant="' + i + '" aria-pressed="' + (i === m.v) + '">' + esc(x.label) + '</button>'; });
+    h += '</div>';
+  }
+
+  if (scalable) {
+    h += '<section class="batch" aria-label="Batch size">' + dialSvg(s) + '<div class="readout">';
+    h += '<div><span class="label">Batch</span><div class="big"><span class="x">×' + mul(s) + '</span><span class="tot">' + esc(totalLine(v, s)) + '</span></div></div>';
+    h += '<div class="chips">';
+    [0.5, 1, 2, 4, 10].forEach(function (c) { h += '<button type="button" data-scale="' + c + '" aria-pressed="' + (c === s) + '">×' + mul(c) + '</button>'; });
+    h += '<label class="exact" for="exact">or ×<input id="exact" type="number" inputmode="decimal" min="0.1" max="100" step="0.25" value="' + trim(s, 3) + '"></label>';
+    h += '</div></div></section>';
+  }
+
+  var hasSteps = !!(r.steps && r.steps.length);
+  h += '<div class="cols' + (hasSteps || r.hand || r.extra || r.stamp ? '' : ' solo') + '">';
+  h += '<section class="sec"><h3><span>' + (r.list ? 'To get' : 'Ingredients') + '</span><button type="button" data-clear="1">Clear ticks</button></h3><ul class="ings">';
+  var out = '';
+  v.ings.forEach(function (g, i) {
+    if (g.sub) { out += '</ul><p class="sub">' + esc(g.sub) + '</p><ul class="ings">'; }
+    var a = amount(g, s), done = !!m.c[m.v + ':' + i];
+    out += '<li class="' + (done ? 'done' : '') + '"><button type="button" class="tickbox" role="checkbox" aria-checked="' + done + '" aria-label="' + esc(g.name) + '" data-tick="' + i + '"></button>';
+    if (g.q != null && scalable) out += '<button type="button" class="qty" data-pin="' + i + '" title="Set the batch from this ingredient">' + esc(a.main) + '</button>';
+    else out += '<span class="qty plain">' + esc(a.main || (r.list ? '' : '—')) + '</span>';
+    out += '<span class="nm">' + esc(g.name) + (a.alt ? ' <span class="alt">' + esc(a.alt) + '</span>' : '');
+    if (g.note) out += '<small>' + esc(g.note) + '</small>';
+    if (g.flag) out += '<small class="flag">' + esc(g.flag) + ' <button type="button" data-note="' + g.flagPage + '">Check the note</button></small>';
+    out += '</span>';
+    if (state.pin === i) {
+      out += '<form class="pin" data-pinform="' + i + '"><label for="pin-in">I’ve got</label><input id="pin-in" type="number" inputmode="decimal" min="0" step="any" value="' + trim(g.q * s, 3) + '"><span>' + UNIT_WORD[g.u] + (g.unitN ? g.unitN : '') + '</span><button type="submit" class="ghost">Scale to this</button></form>';
+    }
+    out += '</li>';
+  });
+  h += out + '</ul>';
+  if (scalable && v.ings.some(function (g) { return g.q != null; })) h += '<p class="hint">Tap any quantity to work the batch back from what you have on hand.</p>';
+  h += '</section>';
+
+  if (hasSteps || r.hand || r.extra || r.stamp) {
+    h += '<section class="sec"><h3><span>' + (hasSteps ? 'Method' : 'On the note') + '</span></h3>';
+    if (hasSteps) {
+      h += '<ol class="steps">';
+      r.steps.forEach(function (st, i) {
+        h += '<li><div><p>' + esc(st.t) + '</p>';
+        if (st.min) h += '<div class="timer" data-timer="' + r.id + ':' + i + '" data-min="' + st.min + '"></div>';
+        h += '</div></li>';
+      });
+      h += '</ol>';
+    }
+    if (r.hand) h += '<p class="hand">“' + esc(r.hand) + '”<cite>written at the bottom of the page</cite></p>';
+    if (r.stamp) h += '<p><span class="stamp">' + esc(r.stamp) + '</span></p>';
+    if (r.extra) h += '<p class="plain-note">' + esc(r.extra) + '</p>';
+    h += '</section>';
+  }
+  h += '</div>';
+  sheet.innerHTML = h;
+  drawTimers();
+  var pinIn = $('pin-in'); if (pinIn) { pinIn.focus(); pinIn.select(); }
+  ['kitchen', 'metric'].forEach(function (k) { $('mode-' + k).setAttribute('aria-pressed', state.mode === k); });
+  ['au', 'us'].forEach(function (k) { $('set-' + k).setAttribute('aria-pressed', state.set === k); });
+}
+
+function setScale(s) {
+  if (!isFinite(s) || s <= 0) return;
+  mem(state.id).s = Math.min(100, Math.max(0.1, +s.toFixed(3)));
+  state.pin = -1; persist(); draw();
+}
+
+/* ---------- timers ---------- */
+function clock(ms) {
+  var t = Math.max(0, Math.round(ms / 1000)), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
+  return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
+function span(min) { return min >= 60 ? (min / 60) + ' hr' : min + ' min'; }
+function drawTimers() {
+  var now = Date.now();
+  Array.prototype.forEach.call(document.querySelectorAll('[data-timer]'), function (el) {
+    var key = el.getAttribute('data-timer'), min = +el.getAttribute('data-min'), end = timers[key], mode = !end ? 'idle' : end > now ? 'run' : 'up';
+    if (el.getAttribute('data-state') !== mode) {
+      el.setAttribute('data-state', mode); el.className = 'timer' + (mode === 'up' ? ' up' : '');
+      if (mode === 'idle') el.innerHTML = '<button type="button" class="ghost" data-start="' + key + '">Start ' + span(min) + ' timer</button>';
+      else {
+        var at = new Date(end), when = at.toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+        el.innerHTML = '<span class="clock"></span><span>' + (mode === 'up' ? 'Time’s up' : 'ready ' + esc(when)) + '</span><button type="button" class="ghost" data-stop="' + key + '">' + (mode === 'up' ? 'Clear' : 'Cancel') + '</button>';
+        if (mode === 'up' && el.getAttribute('data-rang') !== '1' && now - end < 3000) pop();
+      }
+    }
+    var c = el.querySelector('.clock'); if (c) c.textContent = mode === 'up' ? '0:00' : clock(end - now);
+  });
+}
+setInterval(drawTimers, 1000);
+
+/* ---------- events ---------- */
+function go(id, focus) {
+  state.id = (RECIPES.filter(function (r) { return r.id === id; })[0] || RECIPES[0]).id; state.pin = -1;
+  drawBoard(); draw();
+  if (focus) { sheet.focus({ preventScroll: true }); if (sheet.getBoundingClientRect().top < 0 || window.innerWidth <= 860) sheet.scrollIntoView({ block: 'start' }); }
+}
+window.addEventListener('hashchange', function () { var id = location.hash.slice(1); if (id && id !== state.id) go(id, true); });
+
+document.addEventListener('click', function (e) {
+  var t = e.target.closest('button'); if (!t) return;
+  var d = t.dataset, m = state.id ? mem(state.id) : null;
+  if (d.go) { try { location.hash = d.go; } catch (x) {} go(d.go, true); }
+  else if (d.mode) { state.mode = d.mode; persist(); draw(); }
+  else if (d.set) { state.set = d.set; persist(); draw(); }
+  else if (d.scale) setScale(+d.scale);
+  else if (d.variant) { m.v = +d.variant; state.pin = -1; persist(); draw(); }
+  else if (d.tick) { var k = m.v + ':' + d.tick; if (m.c[k]) delete m.c[k]; else m.c[k] = true; persist(); draw(); }
+  else if (d.clear) { m.c = {}; persist(); draw(); }
+  else if (d.pin) { state.pin = state.pin === +d.pin ? -1 : +d.pin; draw(); }
+  else if (d.note) openNote(+d.note);
+  else if (d.start) { var el = t.closest('[data-timer]'); timers[d.start] = Date.now() + (+el.getAttribute('data-min')) * 60000; persist(); drawTimers(); }
+  else if (d.stop) { delete timers[d.stop]; persist(); drawTimers(); }
+});
+document.addEventListener('submit', function (e) {
+  var f = e.target.closest('[data-pinform]'); if (!f) return;
+  e.preventDefault();
+  var g = active(recipe()).ings[+f.dataset.pinform], val = parseFloat(f.querySelector('input').value);
+  if (val > 0) setScale(val / g.q);
+});
+document.addEventListener('change', function (e) { if (e.target.id === 'exact') setScale(parseFloat(e.target.value)); });
+
+/* dial: drag or arrow keys */
+function dialFrom(e) {
+  var svg = $('dial'), b = svg.getBoundingClientRect();
+  var x = (e.clientX - b.left) / b.width * 250 - 125, y = 135 - (e.clientY - b.top) / b.height * 150;
+  var a = Math.atan2(Math.max(y, 0), x), i = Math.round((Math.PI * 0.94 - a) / (Math.PI * 0.88) * (STOPS.length - 1));
+  return STOPS[Math.min(STOPS.length - 1, Math.max(0, i))];
+}
+var dragging = false;
+sheet.addEventListener('pointerdown', function (e) {
+  if (!e.target.closest('#dial')) return;
+  dragging = true; e.preventDefault(); liveScale(dialFrom(e));
+});
+window.addEventListener('pointermove', function (e) { if (dragging) liveScale(dialFrom(e)); });
+window.addEventListener('pointerup', function () { if (dragging) { dragging = false; var d = $('dial'); if (d) d.focus({ preventScroll: true }); } });
+function liveScale(s) { if (s !== mem(state.id).s) { setScale(s); tick(); } }
+sheet.addEventListener('keydown', function (e) {
+  if (e.target.id !== 'dial') return;
+  var step = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key]; if (!step) return;
+  e.preventDefault();
+  var p = stopPos(mem(state.id).s), i = step > 0 ? Math.floor(p + 1e-6) + 1 : Math.ceil(p - 1e-6) - 1;
+  setScale(STOPS[Math.min(STOPS.length - 1, Math.max(0, i))]); tick(); $('dial').focus();
+});
+
+/* note viewer */
+var viewer = $('viewer');
+function openNote(p) {
+  $('viewer-img').src = img(p); $('viewer-img').alt = 'Handwritten note, page ' + p;
+  $('viewer-cap').textContent = 'Original note · page ' + p + ' of 11';
+  if (viewer.showModal) viewer.showModal(); else viewer.setAttribute('open', '');
+}
+$('viewer-close').addEventListener('click', function () { viewer.close(); });
+viewer.addEventListener('click', function (e) { if (e.target === viewer) viewer.close(); });
+
+/* ---------- fire: sound ---------- */
+var ac = null, fireOn = false, fireGain = null, popTimer = null;
+function audio() { if (!ac) { var A = window.AudioContext || window.webkitAudioContext; if (A) ac = new A(); } return ac; }
+function noise(sec) {
+  var b = ac.createBuffer(1, ac.sampleRate * sec, ac.sampleRate), d = b.getChannelData(0), last = 0;
+  for (var i = 0; i < d.length; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+  return b;
+}
+function crackle() {
+  if (!fireOn) return;
+  var src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(), t = ac.currentTime;
+  var b = ac.createBuffer(1, 600, ac.sampleRate), d = b.getChannelData(0);
+  for (var i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 4);
+  src.buffer = b; f.type = 'bandpass'; f.frequency.value = 900 + Math.random() * 3200; f.Q.value = 1.2;
+  g.gain.value = 0.05 + Math.random() * 0.22;
+  src.connect(f); f.connect(g); g.connect(fireGain); src.start(t);
+  popTimer = setTimeout(crackle, 40 + Math.pow(Math.random(), 2.2) * 900);
+}
+$('fire').addEventListener('click', function () {
+  if (!audio()) return;
+  fireOn = !fireOn;
+  this.setAttribute('aria-pressed', fireOn); this.textContent = 'Fire sound: ' + (fireOn ? 'on' : 'off');
+  if (fireOn) {
+    ac.resume();
+    fireGain = ac.createGain(); fireGain.gain.value = 0.5; fireGain.connect(ac.destination);
+    var bed = ac.createBufferSource(), lp = ac.createBiquadFilter(), bg = ac.createGain();
+    bed.buffer = noise(3); bed.loop = true; lp.type = 'lowpass'; lp.frequency.value = 420; bg.gain.value = 0.5;
+    bed.connect(lp); lp.connect(bg); bg.connect(fireGain); bed.start(); fireGain._bed = bed;
+    crackle();
+  } else { clearTimeout(popTimer); try { fireGain._bed.stop(); } catch (x) {} fireGain.disconnect(); }
+});
+function blip(freq, len, vol) {
+  if (!ac || ac.state !== 'running') return;
+  var o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+  o.type = 'triangle'; o.frequency.value = freq; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + len);
+}
+function tick() { blip(1500, 0.03, 0.05); }
+function pop() { blip(880, 0.5, 0.2); setTimeout(function () { blip(880, 0.7, 0.2); }, 600); }
+
+/* ---------- fire: embers ---------- */
+(function () {
+  var cv = $('embers'), cx = cv.getContext('2d'), parts = [], w = 0, h = 0, still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var ember = getComputedStyle(document.documentElement).getPropertyValue('--ember').trim();
+  function size() { w = cv.width = window.innerWidth; h = cv.height = window.innerHeight; }
+  function spawn(p, anywhere) {
+    p.x = Math.random() * w; p.y = anywhere ? Math.random() * h : h + 10;
+    p.r = 0.6 + Math.random() * 1.6; p.vy = 0.25 + Math.random() * 0.8; p.ph = Math.random() * 6.28; p.life = 0.25 + Math.random() * 0.6;
+    return p;
+  }
+  function frame(t) {
+    cx.clearRect(0, 0, w, h);
+    var glow = cx.createLinearGradient(0, h, 0, h * 0.55);
+    glow.addColorStop(0, ember); glow.addColorStop(1, 'transparent');
+    cx.globalAlpha = 0.13 + (still ? 0 : 0.03 * Math.sin(t / 700)); cx.fillStyle = glow; cx.fillRect(0, h * 0.55, w, h * 0.45);
+    cx.fillStyle = ember;
+    parts.forEach(function (p) {
+      if (!still) { p.y -= p.vy; p.x += Math.sin(t / 900 + p.ph) * 0.35; if (p.y < h * (1 - p.life) - 10) spawn(p); }
+      cx.globalAlpha = Math.max(0, Math.min(0.8, (p.y - h * (1 - p.life)) / (h * p.life)));
+      cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 6.28); cx.fill();
+    });
+    if (!still) requestAnimationFrame(frame);
+  }
+  size(); for (var i = 0; i < 46; i++) parts.push(spawn({}, true));
+  window.addEventListener('resize', function () { size(); if (still) frame(0); });
+  requestAnimationFrame(frame);
+})();
+
+go(location.hash.slice(1) || RECIPES[0].id, false);
+})();
+</script>
+</body>
+</html>
